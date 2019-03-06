@@ -4,6 +4,8 @@
 package compiler.phases.lexan;
 
 import java.io.*;
+import java.util.HashMap;
+
 import compiler.common.report.*;
 import compiler.data.symbol.*;
 import compiler.phases.*;
@@ -32,7 +34,38 @@ public class LexAn extends Phase {
 		} catch (IOException ___) {
 			throw new Report.Error("Cannot open source file '" + srcFileName + "'.");
 		}
+		initialize();
 	}
+
+    private void initialize(){
+        keywordMap = new HashMap<>();
+        keywordMap.put("arr",Symbol.Term.ARR);
+        keywordMap.put("bool",Symbol.Term.BOOL);
+        keywordMap.put("char",Symbol.Term.CHAR);
+        keywordMap.put("del",Symbol.Term.DEL);
+        keywordMap.put("do",Symbol.Term.DO);
+        keywordMap.put("else",Symbol.Term.ELSE);
+        keywordMap.put("end",Symbol.Term.END);
+        keywordMap.put("fun",Symbol.Term.FUN);
+        keywordMap.put("if",Symbol.Term.IF);
+        keywordMap.put("int",Symbol.Term.INT);
+        keywordMap.put("new",Symbol.Term.NEW);
+        keywordMap.put("ptr",Symbol.Term.PTR);
+        keywordMap.put("rec",Symbol.Term.REC);
+        keywordMap.put("then",Symbol.Term.THEN);
+        keywordMap.put("typ",Symbol.Term.TYP);
+        keywordMap.put("var",Symbol.Term.VAR);
+        keywordMap.put("void",Symbol.Term.VOID);
+        keywordMap.put("where",Symbol.Term.WHERE);
+        keywordMap.put("while",Symbol.Term.WHILE);
+
+        keywordMap.put("none",Symbol.Term.VOIDCONST);
+        keywordMap.put("null",Symbol.Term.PTRCONST);
+        keywordMap.put("true",Symbol.Term.BOOLCONST);
+        keywordMap.put("false",Symbol.Term.BOOLCONST);
+
+        readNextCharacter();
+    }
 
 	@Override
 	public void close() {
@@ -62,6 +95,16 @@ public class LexAn extends Phase {
 		return symb;
 	}
 
+	private HashMap<String, Symbol.Term> keywordMap;
+    private int character = -1;
+    private String lexeme;
+
+    private int rowLocation = 1;
+    private int columnLocation = 0;
+    private int startRowLocation = 1;
+    private int startColumnLocation = 1;
+    private int endRowLocation = 1;
+    private int endColumnLocation = 1;
 	/**
 	 * Performs the lexical analysis of the source file.
 	 * 
@@ -73,19 +116,281 @@ public class LexAn extends Phase {
 	 *         any more.
 	 */
 	private Symbol lexify() {
-		int c = 0;
-		try{
-			c = srcFile.read();
-		} catch (Exception e){
-			e.printStackTrace();
-		}
-		char a = (char) c;
-		if(a == '+') {
-			return new Symbol(Symbol.Term.ADD, "+", new Location(1, 2, 1, 2));
-		}
-		else {
-			return new Symbol(Symbol.Term.EOF, ".", new Location(1, 2, 1, 3));
-		}
+	    if (character == -1){
+	        return new Symbol(Symbol.Term.EOF, "EOF", getLocation());
+        }
+
+        String ch = (char) character + "";
+	    lexeme = "";
+	    startRowLocation = rowLocation;
+	    startColumnLocation = columnLocation;
+
+	    if (ch.equals("#")){
+	        return readComment();
+        } else if (ch.equals("'")){
+	        return readCharConstant();
+        } else if (ch.equals("\"")){
+	        return readStringConstant();
+        } else if ('0'<=ch.charAt(0) && ch.charAt(0)<='9'){
+	        return readIntConstant();
+        } else if (('A'<=ch.charAt(0) && ch.charAt(0)<='Z') ||
+                ('a'<=ch.charAt(0) && ch.charAt(0)<='z') || ch.charAt(0)=='_') {
+	        return readReservedWord();
+        } else if (ch.equals(" ") || ch.equals("\n") || ch.equals("\t") || ch.equals("\r")){
+	        readNextCharacter();
+	        ch = (char) character + "";
+	        while (ch.equals(" ") || ch.equals("\n") || ch.equals("\t") || ch.equals("\r")){
+	            readNextCharacter();
+                ch = (char) character + "";
+            }
+            return lexify();
+        } else {
+	        lexeme += ch;
+	        switch (ch){
+                case "!":{
+                    readNextCharacter();
+                    ch = (char) character + "";
+                    if (ch.equals("=")){
+                        lexeme += ch;
+                        readNextCharacter();
+                        return new Symbol(Symbol.Term.NEQ, lexeme, getLocation());
+                    } else {
+                        return new Symbol(Symbol.Term.NOT, lexeme, getLocation());
+                    }
+                }
+                case "|":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.IOR, lexeme, getLocation());
+                }
+                case "^":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.XOR, lexeme, getLocation());
+                }
+                case "&":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.AND, lexeme, getLocation());
+                }
+                case "=":{
+                    readNextCharacter();
+                    ch = (char) character + "";
+                    if (ch.equals("=")){
+                        lexeme += ch;
+                        readNextCharacter();
+                        return new Symbol(Symbol.Term.EQU, lexeme, getLocation());
+                    } else {
+                        return new Symbol(Symbol.Term.ASSIGN, lexeme, getLocation());
+                    }
+                }
+                case "<":{
+                    readNextCharacter();
+                    ch = (char) character + "";
+                    if (ch.equals("=")){
+                        lexeme += ch;
+                        readNextCharacter();
+                        return new Symbol(Symbol.Term.LEQ, lexeme, getLocation());
+                    } else {
+                        return new Symbol(Symbol.Term.LTH, lexeme, getLocation());
+                    }
+                }
+                case ">":{
+                    readNextCharacter();
+                    ch = (char) character + "";
+                    if (ch.equals("=")){
+                        lexeme += ch;
+                        readNextCharacter();
+                        return new Symbol(Symbol.Term.GEQ, lexeme, getLocation());
+                    } else {
+                        return new Symbol(Symbol.Term.GTH, lexeme, getLocation());
+                    }
+                }
+                case "+":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.ADD, lexeme, getLocation());
+                }
+                case "-":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.SUB, lexeme, getLocation());
+                }
+                case "*":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.MUL, lexeme, getLocation());
+                }
+                case "/":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.DIV, lexeme, getLocation());
+                }
+                case "%":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.MOD, lexeme, getLocation());
+                }
+                case "$":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.DATA, lexeme, getLocation());
+                }
+                case "@":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.ADDR, lexeme, getLocation());
+                }
+                case ".":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.DOT, lexeme, getLocation());
+                }
+                case ",":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.COMMA, lexeme, getLocation());
+                }
+                case ":":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.COLON, lexeme, getLocation());
+                }
+                case ";":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.SEMIC, lexeme, getLocation());
+                }
+                case "[":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.RBRACKET, lexeme, getLocation());
+                }
+                case "]":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.RBRACKET, lexeme, getLocation());
+                }
+                case "(":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.LPARENTHESIS, lexeme, getLocation());
+                }
+                case ")":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.RPARENTHESIS, lexeme, getLocation());
+                }
+                case "{":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.LBRACE, lexeme, getLocation());
+                }
+                case "}":{
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.RBRACE, lexeme, getLocation());
+                }
+	            default:
+                    throw throwError("Not a valid character.");
+            }
+        }
 	}
 
+	// Lexeme Construction Methods
+
+    private Symbol readComment(){
+	    String ch = (char) character + "";
+	    while (!ch.equals("\n")){
+	        readNextCharacter();
+	        if(character == -1){
+                return new Symbol(Symbol.Term.EOF, "EOF", getLocation());
+            }
+            ch = (char) character + "";
+        }
+        readNextCharacter();
+	    return lexify();
+    }
+
+    private Symbol readCharConstant(){
+        String ch = (char) character + "";
+        lexeme += ch;
+        readNextCharacter();
+        if (character>=32 && character<=126){
+            lexeme += (char) character;
+            readNextCharacter();
+        } else {
+            throw throwError("Char not valid");
+        }
+        ch = (char) character + "";
+        if (ch.equals("'")){
+            lexeme += (char) character;
+            readNextCharacter();
+        } else {
+            throw throwError("Char not valid");
+        }
+	    return new Symbol(Symbol.Term.CHARCONST, lexeme, getLocation());
+    }
+
+    private Symbol readStringConstant(){
+        String ch = (char) character + "";
+        lexeme += ch;
+        readNextCharacter();
+        while (character>=32 && character<=126 && character!=34){
+            lexeme += (char) character;
+            readNextCharacter();
+        }
+        if(character==34){
+            lexeme += (char) character;
+            readNextCharacter();
+            return new Symbol(Symbol.Term.STRCONST, lexeme, getLocation());
+        } else {
+            throw throwError("Missing closing \".");
+        }
+    }
+
+    private Symbol readIntConstant(){
+	    lexeme += (char) character;
+	    readNextCharacter();
+	    char ch = (char) character;
+	    while ('0'<=ch && ch<='9'){
+	        lexeme += ch;
+	        readNextCharacter();
+	        ch = (char) character;
+        }
+        return new Symbol(Symbol.Term.INTCONST, lexeme, getLocation());
+    }
+
+    private Symbol readReservedWord(){
+        lexeme += (char) character;
+        readNextCharacter();
+        char ch = (char) character;
+        while (('A'<=ch && ch<='Z') || ('a'<=ch && ch<='z') ||
+                ('0'<=ch && ch<='9') || ch=='_'){
+            lexeme += ch;
+            readNextCharacter();
+            ch = (char) character;
+        }
+
+        return new Symbol(keywordMap.getOrDefault(lexeme, Symbol.Term.IDENTIFIER), lexeme, getLocation());
+    }
+
+    // Utility Methods
+
+    private void readNextCharacter(){
+	    try {
+	        character = srcFile.read();
+	        updateLocation();
+        } catch (Exception e){
+	        e.printStackTrace();
+        }
+    }
+
+    private void updateLocation(){
+	    endRowLocation = rowLocation;
+	    endColumnLocation = columnLocation;
+	    if (character == -1){
+	        columnLocation ++;
+        }
+        String chr = (char) character + "";
+        switch (chr) {
+            case "\n":
+                rowLocation += 1;
+                columnLocation = 0;
+                break;
+            case "\t":
+                columnLocation += 8;
+                break;
+            default:
+                columnLocation++;
+        }
+    }
+
+    private Locatable getLocation(){
+	    return new Location(startRowLocation, startColumnLocation, endRowLocation, endColumnLocation);
+    }
+
+    private Report.Error throwError(String message){
+        return new Report.Error(getLocation(), message);
+    }
 }
