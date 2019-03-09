@@ -208,6 +208,8 @@ public class LexAn extends Phase {
         } else if (character==10 || character==13 || character==-1){
             throw throwError("String not closed.");
         } else {
+            startColumnLocation = columnLocation;
+            endColumnLocation = columnLocation;
             throw throwError("Invalid character.");
         }
     }
@@ -390,6 +392,7 @@ public class LexAn extends Phase {
                 return new Symbol(Symbol.Term.RBRACE, lexeme, getLocation());
             }
             default:
+                endColumnLocation++;
                 throw throwError("Invalid character.");
         }
     }
