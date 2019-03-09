@@ -60,9 +60,9 @@ public class LexAn extends Phase {
         keywordMap.put("while",Symbol.Term.WHILE);
 
         keywordMap.put("none",Symbol.Term.VOIDCONST);
-        keywordMap.put("null",Symbol.Term.PTRCONST);
         keywordMap.put("true",Symbol.Term.BOOLCONST);
         keywordMap.put("false",Symbol.Term.BOOLCONST);
+        keywordMap.put("null",Symbol.Term.PTRCONST);
 
         readNextCharacter();
     }
@@ -138,146 +138,24 @@ public class LexAn extends Phase {
 	        return readReservedWord();
         } else if (ch.equals(" ") || ch.equals("\n") || ch.equals("\t") || ch.equals("\r")){
 	        readNextCharacter();
+	        if(character == -1){
+	            return new Symbol(Symbol.Term.EOF,"EOF", getLocation());
+            }
 	        ch = (char) character + "";
 	        while (ch.equals(" ") || ch.equals("\n") || ch.equals("\t") || ch.equals("\r")){
 	            readNextCharacter();
+                if(character == -1){
+                    return new Symbol(Symbol.Term.EOF,"EOF", getLocation());
+                }
                 ch = (char) character + "";
             }
             return lexify();
         } else {
-	        lexeme += ch;
-	        switch (ch){
-                case "!":{
-                    readNextCharacter();
-                    ch = (char) character + "";
-                    if (ch.equals("=")){
-                        lexeme += ch;
-                        readNextCharacter();
-                        return new Symbol(Symbol.Term.NEQ, lexeme, getLocation());
-                    } else {
-                        return new Symbol(Symbol.Term.NOT, lexeme, getLocation());
-                    }
-                }
-                case "|":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.IOR, lexeme, getLocation());
-                }
-                case "^":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.XOR, lexeme, getLocation());
-                }
-                case "&":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.AND, lexeme, getLocation());
-                }
-                case "=":{
-                    readNextCharacter();
-                    ch = (char) character + "";
-                    if (ch.equals("=")){
-                        lexeme += ch;
-                        readNextCharacter();
-                        return new Symbol(Symbol.Term.EQU, lexeme, getLocation());
-                    } else {
-                        return new Symbol(Symbol.Term.ASSIGN, lexeme, getLocation());
-                    }
-                }
-                case "<":{
-                    readNextCharacter();
-                    ch = (char) character + "";
-                    if (ch.equals("=")){
-                        lexeme += ch;
-                        readNextCharacter();
-                        return new Symbol(Symbol.Term.LEQ, lexeme, getLocation());
-                    } else {
-                        return new Symbol(Symbol.Term.LTH, lexeme, getLocation());
-                    }
-                }
-                case ">":{
-                    readNextCharacter();
-                    ch = (char) character + "";
-                    if (ch.equals("=")){
-                        lexeme += ch;
-                        readNextCharacter();
-                        return new Symbol(Symbol.Term.GEQ, lexeme, getLocation());
-                    } else {
-                        return new Symbol(Symbol.Term.GTH, lexeme, getLocation());
-                    }
-                }
-                case "+":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.ADD, lexeme, getLocation());
-                }
-                case "-":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.SUB, lexeme, getLocation());
-                }
-                case "*":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.MUL, lexeme, getLocation());
-                }
-                case "/":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.DIV, lexeme, getLocation());
-                }
-                case "%":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.MOD, lexeme, getLocation());
-                }
-                case "$":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.DATA, lexeme, getLocation());
-                }
-                case "@":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.ADDR, lexeme, getLocation());
-                }
-                case ".":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.DOT, lexeme, getLocation());
-                }
-                case ",":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.COMMA, lexeme, getLocation());
-                }
-                case ":":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.COLON, lexeme, getLocation());
-                }
-                case ";":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.SEMIC, lexeme, getLocation());
-                }
-                case "[":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.RBRACKET, lexeme, getLocation());
-                }
-                case "]":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.RBRACKET, lexeme, getLocation());
-                }
-                case "(":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.LPARENTHESIS, lexeme, getLocation());
-                }
-                case ")":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.RPARENTHESIS, lexeme, getLocation());
-                }
-                case "{":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.LBRACE, lexeme, getLocation());
-                }
-                case "}":{
-                    readNextCharacter();
-                    return new Symbol(Symbol.Term.RBRACE, lexeme, getLocation());
-                }
-	            default:
-                    throw throwError("Not a valid character.");
-            }
+            return getOtherSymbol(ch);
         }
 	}
 
-	// Lexeme Construction Methods
+    // Lexeme Construction Methods
 
     private Symbol readComment(){
 	    String ch = (char) character + "";
@@ -302,12 +180,15 @@ public class LexAn extends Phase {
         } else {
             throw throwError("Char not valid");
         }
+        if(character == -1){
+            throw throwError("Char not closed");
+        }
         ch = (char) character + "";
         if (ch.equals("'")){
             lexeme += (char) character;
             readNextCharacter();
         } else {
-            throw throwError("Char not valid");
+            throw throwError("Char not valid, should be '.");
         }
 	    return new Symbol(Symbol.Term.CHARCONST, lexeme, getLocation());
     }
@@ -324,18 +205,26 @@ public class LexAn extends Phase {
             lexeme += (char) character;
             readNextCharacter();
             return new Symbol(Symbol.Term.STRCONST, lexeme, getLocation());
+        } else if (character==10 || character==13 || character==-1){
+            throw throwError("String not closed.");
         } else {
-            throw throwError("Missing closing \".");
+            throw throwError("Invalid character.");
         }
     }
 
     private Symbol readIntConstant(){
 	    lexeme += (char) character;
 	    readNextCharacter();
+        if (character == -1){
+            return new Symbol(Symbol.Term.INTCONST, lexeme, getLocation());
+        }
 	    char ch = (char) character;
 	    while ('0'<=ch && ch<='9'){
 	        lexeme += ch;
 	        readNextCharacter();
+            if (character == -1){
+                return new Symbol(Symbol.Term.INTCONST, lexeme, getLocation());
+            }
 	        ch = (char) character;
         }
         return new Symbol(Symbol.Term.INTCONST, lexeme, getLocation());
@@ -344,18 +233,169 @@ public class LexAn extends Phase {
     private Symbol readReservedWord(){
         lexeme += (char) character;
         readNextCharacter();
+        if (character == -1){
+            return new Symbol(keywordMap.getOrDefault(lexeme, Symbol.Term.IDENTIFIER), lexeme, getLocation());
+        }
         char ch = (char) character;
         while (('A'<=ch && ch<='Z') || ('a'<=ch && ch<='z') ||
                 ('0'<=ch && ch<='9') || ch=='_'){
             lexeme += ch;
             readNextCharacter();
+            if (character == -1){
+                return new Symbol(keywordMap.getOrDefault(lexeme, Symbol.Term.IDENTIFIER), lexeme, getLocation());
+            }
             ch = (char) character;
         }
 
         return new Symbol(keywordMap.getOrDefault(lexeme, Symbol.Term.IDENTIFIER), lexeme, getLocation());
     }
 
-    // Utility Methods
+    private Symbol getOtherSymbol(String ch) {
+        lexeme += ch;
+        switch (ch){
+            case "!":{
+                readNextCharacter();
+                if (character == -1){
+                    return new Symbol(Symbol.Term.NOT, lexeme, getLocation());
+                }
+                ch = (char) character + "";
+                if (ch.equals("=")){
+                    lexeme += ch;
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.NEQ, lexeme, getLocation());
+                } else {
+                    return new Symbol(Symbol.Term.NOT, lexeme, getLocation());
+                }
+            }
+            case "|":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.IOR, lexeme, getLocation());
+            }
+            case "^":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.XOR, lexeme, getLocation());
+            }
+            case "&":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.AND, lexeme, getLocation());
+            }
+            case "=":{
+                readNextCharacter();
+                if (character == -1){
+                    return new Symbol(Symbol.Term.ASSIGN, lexeme, getLocation());
+                }
+                ch = (char) character + "";
+                if (ch.equals("=")){
+                    lexeme += ch;
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.EQU, lexeme, getLocation());
+                } else {
+                    return new Symbol(Symbol.Term.ASSIGN, lexeme, getLocation());
+                }
+            }
+            case "<":{
+                readNextCharacter();
+                if (character == -1){
+                    return new Symbol(Symbol.Term.LTH, lexeme, getLocation());
+                }
+                ch = (char) character + "";
+                if (ch.equals("=")){
+                    lexeme += ch;
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.LEQ, lexeme, getLocation());
+                } else {
+                    return new Symbol(Symbol.Term.LTH, lexeme, getLocation());
+                }
+            }
+            case ">":{
+                readNextCharacter();
+                if (character == -1){
+                    return new Symbol(Symbol.Term.GTH, lexeme, getLocation());
+                }
+                ch = (char) character + "";
+                if (ch.equals("=")){
+                    lexeme += ch;
+                    readNextCharacter();
+                    return new Symbol(Symbol.Term.GEQ, lexeme, getLocation());
+                } else {
+                    return new Symbol(Symbol.Term.GTH, lexeme, getLocation());
+                }
+            }
+            case "+":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.ADD, lexeme, getLocation());
+            }
+            case "-":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.SUB, lexeme, getLocation());
+            }
+            case "*":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.MUL, lexeme, getLocation());
+            }
+            case "/":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.DIV, lexeme, getLocation());
+            }
+            case "%":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.MOD, lexeme, getLocation());
+            }
+            case "$":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.ADDR, lexeme, getLocation());
+            }
+            case "@":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.DATA, lexeme, getLocation());
+            }
+            case ".":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.DOT, lexeme, getLocation());
+            }
+            case ",":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.COMMA, lexeme, getLocation());
+            }
+            case ":":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.COLON, lexeme, getLocation());
+            }
+            case ";":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.SEMIC, lexeme, getLocation());
+            }
+            case "[":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.LBRACKET, lexeme, getLocation());
+            }
+            case "]":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.RBRACKET, lexeme, getLocation());
+            }
+            case "(":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.LPARENTHESIS, lexeme, getLocation());
+            }
+            case ")":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.RPARENTHESIS, lexeme, getLocation());
+            }
+            case "{":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.LBRACE, lexeme, getLocation());
+            }
+            case "}":{
+                readNextCharacter();
+                return new Symbol(Symbol.Term.RBRACE, lexeme, getLocation());
+            }
+            default:
+                throw throwError("Invalid character.");
+        }
+    }
+
+
+    // Helper Methods
 
     private void readNextCharacter(){
 	    try {
@@ -371,6 +411,7 @@ public class LexAn extends Phase {
 	    endColumnLocation = columnLocation;
 	    if (character == -1){
 	        columnLocation ++;
+	        return;
         }
         String chr = (char) character + "";
         switch (chr) {
