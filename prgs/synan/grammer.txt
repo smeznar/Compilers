@@ -1,0 +1,108 @@
+Source -> Decls .
+
+Decls -> Decl DeclsRst .
+
+DeclsRst -> .
+DeclsRst -> Decls.
+
+Decl -> typ identifier : Type ; .
+Decl -> var identifier : Type ; .
+Decl -> fun identifier ( ParDeclsEps ) : Type BodyEps .
+
+ParDeclsEps -> .
+ParDeclsEps -> ParDecls .
+
+ParDecls -> ParDecl ParDeclsRest .
+
+ParDecl -> identifier : type .
+
+ParDeclsRest -> .
+ParDeclsRest -> , ParDecls .
+
+BodyEps -> .
+BodyEps -> = Expr .
+
+Type -> void | int | char | bool .
+Type -> arr [ Expr ] Type | ptr Type .
+Type -> identifier | ( Type ).
+Type -> rec ( CompDecls ) .
+
+CompDecls -> CompDecl CompDeclsRest.
+
+CompDecl -> identifier : type .
+
+CompDeclsRest -> .
+CompDeclsRest -> , CompDecls .
+
+--------------------------------------------- ^| should be ok ----  v| fix
+
+Expr -> .
+Expr -> ( Expr CastEps ) .
+
+DisjExpr -> ConjExpr DisjExprRest .
+
+DisjExprRest -> .
+DisjExprRest -> \ DisjExpr | ^ DisjExpr .
+
+ConjExpr -> RelExpr ConjExprRest .
+
+ConjExprRest -> .
+ConjExprRest -> & ConjExpr.
+
+RelExpr -> AddExpr RelExprRest.
+
+RelExprRest -> .
+RelExprRest -> eql RelExpr | neq RelExpr | lte RelExpr .
+RelExprRest -> mte RelExpr | < RelExpr | > RelExpr .
+
+AddExpr -> MulExpr AddExprRest.
+
+AddExprRest -> .
+AddExprRest -> + AddExpr | - AddExpr.
+
+MulExpr -> PredExpr MulExprRest.
+
+MulExprRest -> .
+MulExprRest -> * MulExpr | / MulExpr | % MulExpr.
+
+PrefExpr -> PstfExpr | ! PstfExpr | + PstfExpr | - PstfExpr .
+PrefExpr -> @ PstfExpr | $ PstfExpr | new PstfExpr | del PstfExpr .
+PrefExpr -> ( Expr : Type ) PstfExpr .
+
+PstfExpr -> Atom PstfExprRest .
+
+PstfExprRest -> .
+PstfExprRest -> .
+
+AtomExpr -> literal | identifier .
+
+--------------------------------------------- ^| fix -------- v| should be ok
+
+CallEps -> .
+CallEps -> ( ArgsEps ) .
+
+ArgsEps -> .
+ArgsEps -> Args ArgsRest .
+
+Args -> Expr .
+
+ArgsRest -> ArgsEps .
+
+CastEps -> .
+CastEps -> : Type .
+
+WhereEps -> where Decls .
+
+Stmts -> Stmt StmtsRest.
+
+StmtsRest -> .
+StmtsRest -> Stmts.
+
+Stmt -> Expr AssignEps ; .
+Stmt -> if Expr then Stmts ElseEps end ; .
+Stmt -> while Expr do Stmts end ; .
+
+AssignEps -> .
+AssignEps -> = Expr .
+
+ElseEps -> else Stmts .
