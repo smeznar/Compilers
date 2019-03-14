@@ -14,7 +14,7 @@ ParDeclsEps -> ParDecls .
 
 ParDecls -> ParDecl ParDeclsRest .
 
-ParDecl -> identifier : type .
+ParDecl -> identifier : Type .
 
 ParDeclsRest -> .
 ParDeclsRest -> , ParDecls .
@@ -29,15 +29,12 @@ Type -> rec ( CompDecls ) .
 
 CompDecls -> CompDecl CompDeclsRest.
 
-CompDecl -> identifier : type .
+CompDecl -> identifier : Type .
 
 CompDeclsRest -> .
 CompDeclsRest -> , CompDecls .
 
---------------------------------------------- ^| should be ok ----  v| fix
-
-Expr -> .
-Expr -> ( Expr CastEps ) .
+Expr -> DisjExpr .
 
 DisjExpr -> ConjExpr DisjExprRest .
 
@@ -52,31 +49,30 @@ ConjExprRest -> & ConjExpr.
 RelExpr -> AddExpr RelExprRest.
 
 RelExprRest -> .
-RelExprRest -> eql RelExpr | neq RelExpr | lte RelExpr .
-RelExprRest -> mte RelExpr | < RelExpr | > RelExpr .
+RelExprRest -> eql AddExpr | neq AddExpr | lte AddExpr .
+RelExprRest -> mte AddExpr | < AddExpr | > AddExpr .
 
 AddExpr -> MulExpr AddExprRest.
 
 AddExprRest -> .
 AddExprRest -> + AddExpr | - AddExpr.
 
-MulExpr -> PredExpr MulExprRest.
+MulExpr -> PrefExpr MulExprRest.
 
 MulExprRest -> .
 MulExprRest -> * MulExpr | / MulExpr | % MulExpr.
 
-PrefExpr -> PstfExpr | ! PstfExpr | + PstfExpr | - PstfExpr .
-PrefExpr -> @ PstfExpr | $ PstfExpr | new PstfExpr | del PstfExpr .
-PrefExpr -> ( Expr : Type ) PstfExpr .
+PrefExpr -> PstfExpr | ! PrefExpr | + PrefExpr | - PrefExpr .
+PrefExpr -> @ PrefExpr | $ PrefExpr | new ( Type ) | del ( Expr ) .
 
-PstfExpr -> Atom PstfExprRest .
+PstfExpr -> AtomExpr PstfExprRest .
 
 PstfExprRest -> .
-PstfExprRest -> .
+PstfExprRest -> [ Expr ] PstfExprRest .
+PstfExprRest -> ~ identifier PstfExprRest .
 
-AtomExpr -> literal | identifier .
-
---------------------------------------------- ^| fix -------- v| should be ok
+AtomExpr -> literal | identifier CallEps | ( Expr CastEps ).
+AtomExpr -> { Stmts : Expr WhereEps } .
 
 CallEps -> .
 CallEps -> ( ArgsEps ) .
@@ -86,7 +82,7 @@ ArgsEps -> Args ArgsRest .
 
 Args -> Expr .
 
-ArgsRest -> ArgsEps .
+ArgsRest -> , ArgsEps .
 
 CastEps -> .
 CastEps -> : Type .
@@ -105,4 +101,5 @@ Stmt -> while Expr do Stmts end ; .
 AssignEps -> .
 AssignEps -> = Expr .
 
+ElseEps -> .
 ElseEps -> else Stmts .
