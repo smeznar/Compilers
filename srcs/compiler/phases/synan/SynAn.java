@@ -93,75 +93,49 @@ public class SynAn extends Phase {
 
 	private DerNode parseSource() {
 		DerNode node = new DerNode(DerNode.Nont.Source);
-		switch (currSymb.token){
-			case TYP:
-			case VAR:
-			case FUN:{
-				node.add(parseDecls());
-				break;
-			}
-			default: {
-			}
-		}
+		node.add(parseDecls());
 		return node;
 	}
 
 	private DerNode parseDecls(){
 		DerNode node = new DerNode(DerNode.Nont.Decls);
-		switch (currSymb.token){
-			case TYP:
-			case VAR:
-			case FUN:{
-				node.add(parseDecl());
-				node.add(parseDeclRest());
-				break;
-			}
-			default: {
-
-			}
-		}
+		node.add(parseDecl());
+		node.add(parseDeclsRest());
 		return node;
 	}
 
 	private DerNode parseDecl(){
 		DerNode node = new DerNode(DerNode.Nont.Decls);
 		switch (currSymb.token){
-			case TYP: {
-				add(node, Symbol.Term.TYP, "");
-				add(node, Symbol.Term.IDENTIFIER, "");
-				add(node, Symbol.Term.COLON, "");
-				node.add(parseType());
-				add(node, Symbol.Term.SEMIC, "");
-				break;
-			}
+			case TYP:
 			case VAR: {
-				add(node, Symbol.Term.VAR, "");
-				add(node, Symbol.Term.IDENTIFIER, "");
-				add(node, Symbol.Term.COLON, "");
+				add(node);
+				add(node, Symbol.Term.IDENTIFIER, createErrorMessage(Symbol.Term.IDENTIFIER));
+				add(node, Symbol.Term.COLON, createErrorMessage(Symbol.Term.COLON));
 				node.add(parseType());
-				add(node, Symbol.Term.SEMIC, "");
+				add(node, Symbol.Term.SEMIC, createErrorMessage(Symbol.Term.SEMIC));
 				break;
 			}
 			case FUN:{
-				add(node, Symbol.Term.FUN, "");
-				add(node, Symbol.Term.IDENTIFIER, "");
-				add(node, Symbol.Term.LPARENTHESIS, "");
+				add(node);
+				add(node, Symbol.Term.IDENTIFIER, createErrorMessage(Symbol.Term.IDENTIFIER));
+				add(node, Symbol.Term.LPARENTHESIS, createErrorMessage(Symbol.Term.LPARENTHESIS));
 				node.add(parseParDeclsEps());
-				add(node, Symbol.Term.RPARENTHESIS, "");
-				add(node, Symbol.Term.COLON, "");
+				add(node, Symbol.Term.RPARENTHESIS, createErrorMessage(Symbol.Term.RPARENTHESIS));
+				add(node, Symbol.Term.COLON, createErrorMessage(Symbol.Term.COLON));
 				node.add(parseType());
 				node.add(parseBodyEps());
-				add(node, Symbol.Term.SEMIC, "");
+				add(node, Symbol.Term.SEMIC, createErrorMessage(Symbol.Term.SEMIC));
 				break;
 			}
 			default: {
-
+				throw createError("Decl");
 			}
 		}
 		return node;
 	}
 
-	private DerNode parseDeclRest(){
+	private DerNode parseDeclsRest(){
 		DerNode node = new DerNode(DerNode.Nont.DeclsRest);
 		switch (currSymb.token){
 			case TYP:
@@ -175,63 +149,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-
-			}
-		}
-		return node;
-	}
-
-	private DerNode parseType(){
-		DerNode node = new DerNode(DerNode.Nont.Type);
-		switch (currSymb.token){
-			case IDENTIFIER:{
-				add(node, Symbol.Term.IDENTIFIER, "");
-				break;
-			}
-			case LPARENTHESIS:{
-				add(node, Symbol.Term.LPARENTHESIS, "");
-				node.add(parseType());
-				add(node, Symbol.Term.RPARENTHESIS, "");
-				break;
-			}
-			case VOID:{
-				add(node, Symbol.Term.VOID, "");
-				break;
-			}
-			case INT:{
-				add(node, Symbol.Term.INT, "");
-				break;
-			}
-			case CHAR:{
-				add(node, Symbol.Term.CHAR, "");
-				break;
-			}
-			case BOOL:{
-				add(node, Symbol.Term.BOOL, "");
-				break;
-			}
-			case ARR: {
-				add(node, Symbol.Term.ARR, "");
-				add(node, Symbol.Term.LBRACKET, "");
-				node.add(parseExpr());
-				add(node, Symbol.Term.RBRACKET, "");
-				node.add(parseType());
-				break;
-			}
-			case PTR: {
-				add(node, Symbol.Term.PTR, "");
-				node.add(parseType());
-				break;
-			}
-			case REC: {
-				add(node, Symbol.Term.REC, "");
-				add(node, Symbol.Term.LPARENTHESIS, "");
-				node.add(parseCompDecls());
-				add(node, Symbol.Term.RPARENTHESIS, "");
-				break;
-			}
-			default: {
-
+                throw createError("DeclsRest");
 			}
 		}
 		return node;
@@ -239,65 +157,46 @@ public class SynAn extends Phase {
 
 	private DerNode parseParDeclsEps(){
 		DerNode node = new DerNode(DerNode.Nont.ParDeclsEps);
-		switch (currSymb.token){
-			case IDENTIFIER: {
-				node.add(parseParDecls());
-				break;
-			}
-			case RPARENTHESIS:{
-				break;
-			}
-			default: {
-
-			}
+		if (currSymb.token.equals(Symbol.Term.RPARENTHESIS)){
+			return node;
+		} else {
+			node.add(parseParDecls());
+			return node;
 		}
-		return node;
 	}
 
 	private DerNode parseParDecls(){
 		DerNode node = new DerNode(DerNode.Nont.ParDecls);
-		switch (currSymb.token){
-			case IDENTIFIER: {
-				node.add(parseParDecl());
-				node.add(parseParDeclsRest());
-				break;
-			}
-			default: {
-
-			}
-		}
+		node.add(parseParDecl());
+		node.add(parseParDeclsRest());
 		return node;
 	}
 
 	private DerNode parseParDecl(){
 		DerNode node = new DerNode(DerNode.Nont.ParDecl);
-		switch (currSymb.token){
-			case IDENTIFIER:{
-				add(node, Symbol.Term.IDENTIFIER, "");
-				add(node, Symbol.Term.COLON, "");
-				node.add(parseType());
-				break;
-			}
-			default: {
-
-			}
+		if (currSymb.token.equals(Symbol.Term.IDENTIFIER)) {
+			add(node);
+			add(node, Symbol.Term.COLON, createErrorMessage(Symbol.Term.COLON));
+			node.add(parseType());
+			return node;
+		} else {
+			throw createError("ParDecl");
 		}
-		return node;
 	}
 
 	private DerNode parseParDeclsRest(){
 		DerNode node = new DerNode(DerNode.Nont.ParDeclsRest);
 		switch (currSymb.token){
-			case COMMA: {
-				add(node, Symbol.Term.COMMA, "");
-				node.add(parseParDecls());
-				break;
-			}
 			case RPARENTHESIS:{
 				break;
 			}
+			case COMMA: {
+				add(node);
+				node.add(parseParDecls());
+				break;
+			}
 			default: {
-
+				throw createError("ParDeclsRest");
 			}
 		}
 		return node;
@@ -306,19 +205,59 @@ public class SynAn extends Phase {
 	private DerNode parseBodyEps(){
 		DerNode node = new DerNode(DerNode.Nont.BodyEps);
 		switch (currSymb.token){
-			case EOF:
-			case RBRACE:
-			case FUN:
-			case VAR:
-			case TYP: {
+			case SEMIC: {
 				break;
 			}
 			case ASSIGN:
-				add(node,Symbol.Term.ASSIGN,"");
-				node.add(parseExpr());
+				add(node);
+				node.add(parseDisjExpr());
 				break;
 			default: {
+				throw createError("BodyEps");
+			}
+		}
+		return node;
+	}
 
+	private DerNode parseType(){
+		DerNode node = new DerNode(DerNode.Nont.Type);
+		switch (currSymb.token){
+			case IDENTIFIER:
+			case VOID:
+			case INT:
+			case CHAR:
+			case BOOL:{
+				add(node);
+				break;
+			}
+			case LPARENTHESIS:{
+				add(node);
+				node.add(parseType());
+				add(node, Symbol.Term.RPARENTHESIS, createErrorMessage(Symbol.Term.RPARENTHESIS));
+				break;
+			}
+			case ARR: {
+				add(node);
+				add(node, Symbol.Term.LBRACKET, createErrorMessage(Symbol.Term.LBRACKET));
+				node.add(parseDisjExpr());
+				add(node, Symbol.Term.RBRACKET, createErrorMessage(Symbol.Term.RBRACKET));
+				node.add(parseType());
+				break;
+			}
+			case PTR: {
+				add(node);
+				node.add(parseType());
+				break;
+			}
+			case REC: {
+				add(node);
+				add(node, Symbol.Term.LPARENTHESIS, createErrorMessage(Symbol.Term.LPARENTHESIS));
+				node.add(parseCompDecls());
+				add(node, Symbol.Term.RPARENTHESIS, createErrorMessage(Symbol.Term.RPARENTHESIS));
+				break;
+			}
+			default: {
+				throw createError("Type");
 			}
 		}
 		return node;
@@ -326,33 +265,21 @@ public class SynAn extends Phase {
 
 	private DerNode parseCompDecls(){
 		DerNode node = new DerNode(DerNode.Nont.CompDecls);
-		switch (currSymb.token){
-			case IDENTIFIER:{
-				node.add(parseCompDecl());
-				node.add(parseCompDeclsRest());
-				break;
-			}
-			default:{
-
-			}
-		}
+		node.add(parseCompDecl());
+		node.add(parseCompDeclsRest());
 		return node;
 	}
 
 	private DerNode parseCompDecl(){
 		DerNode node = new DerNode(DerNode.Nont.CompDecl);
-		switch (currSymb.token){
-			case IDENTIFIER:{
-				add(node, Symbol.Term.IDENTIFIER,"");
-				add(node, Symbol.Term.COLON,"");
-				node.add(parseType());
-				break;
-			}
-			default: {
-
-			}
+		if (currSymb.token.equals(Symbol.Term.IDENTIFIER)){
+			add(node);
+			add(node, Symbol.Term.COLON,createErrorMessage(Symbol.Term.COLON));
+			node.add(parseType());
+			return node;
+		} else {
+			throw createError("CompDecl");
 		}
-		return node;
 	}
 
 	private DerNode parseCompDeclsRest(){
@@ -362,12 +289,317 @@ public class SynAn extends Phase {
 				break;
 			}
 			case COMMA:{
-				add(node, Symbol.Term.COMMA, "");
+				add(node);
 				node.add(parseCompDecls());
 				break;
 			}
 			default: {
+				throw createError("CompDeclsRest");
+			}
+		}
+		return node;
+	}
 
+	private DerNode parseDisjExpr(){
+		DerNode node = new DerNode(DerNode.Nont.DisjExpr);
+		node.add(parseConjExpr());
+		node.add(parseDisjExprRest());
+		return node;
+	}
+
+	private DerNode parseDisjExprRest(){
+		DerNode node = new DerNode(DerNode.Nont.DisjExprRest);
+		switch (currSymb.token){
+			case COLON:
+			case SEMIC:
+			case RPARENTHESIS:
+			case COMMA:
+			case ASSIGN:
+			case RBRACKET:
+			case WHERE:
+			case THEN:
+			case DO:
+			case RBRACE: {
+				break;
+			}
+			case IOR:
+			case XOR: {
+				add(node);
+				node.add(parseDisjExpr());
+				break;
+			}
+			default: {
+				throw createError("DisjExprRest");
+			}
+		}
+		return node;
+	}
+
+	private DerNode parseConjExpr(){
+		DerNode node = new DerNode(DerNode.Nont.ConjExpr);
+		node.add(parseRelExpr());
+		node.add(parseConjExprRest());
+		return node;
+	}
+
+	private DerNode parseConjExprRest(){
+		DerNode node = new DerNode(DerNode.Nont.ConjExprRest);
+		switch (currSymb.token){
+			case COLON:
+			case SEMIC:
+			case RPARENTHESIS:
+			case COMMA:
+			case ASSIGN:
+			case RBRACKET:
+			case RBRACE:
+			case WHERE:
+			case THEN:
+			case DO:
+			case IOR:
+			case XOR: {
+				break;
+			}
+			case AND: {
+				add(node);
+				node.add(parseConjExpr());
+				break;
+			}
+			default: {
+				throw createError("ConjExprRest");
+			}
+		}
+		return node;
+	}
+
+	private DerNode parseRelExpr(){
+		DerNode node = new DerNode(DerNode.Nont.RelExpr);
+		node.add(parseAddExpr());
+		node.add(parseRelExprRest());
+		return node;
+	}
+
+	private DerNode parseRelExprRest(){
+		DerNode node = new DerNode(DerNode.Nont.RelExprRest);
+		switch (currSymb.token){
+			case COLON:
+			case SEMIC:
+			case RPARENTHESIS:
+			case COMMA:
+			case ASSIGN:
+			case RBRACKET:
+			case RBRACE:
+			case WHERE:
+			case THEN:
+			case DO:
+			case IOR:
+			case XOR:
+			case AND: {
+				break;
+			}
+			case EQU:
+			case NEQ:
+			case LEQ:
+			case GEQ:
+			case LTH:
+			case GTH: {
+				add(node);
+				node.add(parseAddExpr());
+				break;
+			}
+			default: {
+				throw createError("RelExprRest");
+			}
+		}
+		return node;
+	}
+
+	private DerNode parseAddExpr(){
+		DerNode node = new DerNode(DerNode.Nont.AddExpr);
+		node.add(parseMulExpr());
+		node.add(parseAddExprRest());
+		return node;
+	}
+
+	private DerNode parseAddExprRest(){
+		DerNode node = new DerNode(DerNode.Nont.AddExprRest);
+		switch (currSymb.token){
+			case COLON:
+			case SEMIC:
+			case RPARENTHESIS:
+			case COMMA:
+			case ASSIGN:
+			case RBRACKET:
+			case RBRACE:
+			case WHERE:
+			case THEN:
+			case DO:
+			case IOR:
+			case XOR:
+			case AND:
+			case EQU:
+			case NEQ:
+			case LEQ:
+			case GEQ:
+			case LTH:
+			case GTH: {
+				break;
+			}
+			case ADD:
+			case SUB:{
+				add(node);
+				node.add(parseAddExpr());
+				break;
+			}
+			default: {
+				throw createError("AddExprRest");
+			}
+		}
+		return node;
+	}
+
+	private DerNode parseMulExpr(){
+		DerNode node = new DerNode(DerNode.Nont.MulExpr);
+		node.add(parsePrefExpr());
+		node.add(parseMulExprRest());
+		return node;
+	}
+
+	private DerNode parseMulExprRest(){
+		DerNode node = new DerNode(DerNode.Nont.MulExprRest);
+		switch (currSymb.token){
+			case COLON:
+			case SEMIC:
+			case RPARENTHESIS:
+			case COMMA:
+			case ASSIGN:
+			case RBRACKET:
+			case RBRACE:
+			case WHERE:
+			case THEN:
+			case DO:
+			case IOR:
+			case XOR:
+			case AND:
+			case EQU:
+			case NEQ:
+			case LEQ:
+			case GEQ:
+			case LTH:
+			case GTH:
+			case ADD:
+			case SUB:{
+				break;
+			}
+			case MUL:
+			case DIV:
+			case MOD:{
+				add(node);
+				node.add(parseMulExpr());
+				break;
+			}
+			default: {
+				throw createError("MulExprRest");
+			}
+		}
+		return node;
+	}
+
+	private DerNode parsePrefExpr(){
+		DerNode node = new DerNode(DerNode.Nont.PrefExpr);
+		switch (currSymb.token){
+			case IDENTIFIER:
+			case LPARENTHESIS:
+			case LBRACE:
+			case CHARCONST:
+			case BOOLCONST:
+			case INTCONST:
+			case PTRCONST:
+			case STRCONST:
+			case VOIDCONST: {
+				node.add(parsePstfExpr());
+				break;
+			}
+			case ADD:
+			case SUB:
+			case NOT:
+			case DATA:
+			case ADDR: {
+				add(node);
+				node.add(parsePrefExpr());
+				break;
+			}
+			case NEW: {
+				add(node);
+				add(node, Symbol.Term.LPARENTHESIS, createErrorMessage(Symbol.Term.LPARENTHESIS));
+				node.add(parseType());
+				add(node, Symbol.Term.RPARENTHESIS, createErrorMessage(Symbol.Term.RPARENTHESIS));
+				break;
+			}
+			case DEL: {
+				add(node);
+				add(node, Symbol.Term.LPARENTHESIS, createErrorMessage(Symbol.Term.LPARENTHESIS));
+				node.add(parseDisjExpr());
+				add(node, Symbol.Term.RPARENTHESIS, createErrorMessage(Symbol.Term.RPARENTHESIS));
+				break;
+			}
+			default: {
+				throw createError("PrefExpr");
+			}
+		}
+		return node;
+	}
+
+	private DerNode parsePstfExpr(){
+		DerNode node = new DerNode(DerNode.Nont.PstfExpr);
+		node.add(parseExpr());
+		node.add(parsePstfExpRest());
+		return node;
+	}
+
+	private DerNode parsePstfExpRest(){
+		DerNode node = new DerNode(DerNode.Nont.PstfExprRest);
+		switch (currSymb.token){
+			case COLON:
+			case SEMIC:
+			case RPARENTHESIS:
+			case RBRACE:
+			case COMMA:
+			case ASSIGN:
+			case RBRACKET:
+			case WHERE:
+			case THEN:
+			case DO:
+			case IOR:
+			case XOR:
+			case AND:
+			case EQU:
+			case NEQ:
+			case LEQ:
+			case GEQ:
+			case LTH:
+			case GTH:
+			case ADD:
+			case SUB:
+			case MUL:
+			case DIV:
+			case MOD: {
+				break;
+			}
+			case DOT: {
+				add(node);
+				add(node, Symbol.Term.IDENTIFIER, createErrorMessage(Symbol.Term.IDENTIFIER));
+				node.add(parsePstfExpRest());
+				break;
+			}
+			case LBRACKET: {
+				add(node);
+				node.add(parseDisjExpr());
+				add(node, Symbol.Term.RBRACKET, createErrorMessage(Symbol.Term.RBRACKET));
+				node.add(parsePstfExpRest());
+				break;
+			}
+			default: {
+				throw createError("PstfExprRest");
 			}
 		}
 		return node;
@@ -376,14 +608,144 @@ public class SynAn extends Phase {
 	private DerNode parseExpr(){
 		DerNode node = new DerNode(DerNode.Nont.Expr);
 		switch (currSymb.token){
-			case LBRACE:{
-				add(node, Symbol.Term.LBRACE, "");
-				node.add(parseStmts());
-				add(node, Symbol.Term.COLON, "");
-				node.add(parseExpr());
-				node.add(parseWhereEps());
-				add(node, Symbol.Term.RBRACE, "");
+			case IDENTIFIER:
+			case CHARCONST:
+			case BOOLCONST:
+			case INTCONST:
+			case STRCONST:
+			case PTRCONST:
+			case VOIDCONST:	{
+				node.add(parseAtomExpr());
 				break;
+			}
+			case LBRACE:{
+				add(node);
+				node.add(parseStmts());
+				add(node, Symbol.Term.COLON, createErrorMessage(Symbol.Term.COLON));
+				node.add(parseDisjExpr());
+				node.add(parseWhereEps());
+				add(node, Symbol.Term.RBRACE, createErrorMessage(Symbol.Term.RBRACE));
+				break;
+			}
+			case LPARENTHESIS: {
+				add(node);
+				node.add(parseDisjExpr());
+				node.add(parseCastEps());
+				add(node, Symbol.Term.RPARENTHESIS, createErrorMessage(Symbol.Term.RPARENTHESIS));
+				break;
+			}
+			default: {
+				throw createError("Expr");
+			}
+		}
+		return node;
+	}
+
+	private DerNode parseAtomExpr(){
+		DerNode node = new DerNode(DerNode.Nont.AtomExpr);
+		if (currSymb.token.equals(Symbol.Term.IDENTIFIER)){
+			add(node);
+			node.add(parseCallEps());
+		} else {
+			add(node);
+		}
+		return node;
+	}
+
+	private DerNode parseCallEps(){
+		DerNode node = new DerNode(DerNode.Nont.CallEps);
+		switch (currSymb.token){
+			case COLON:
+			case SEMIC:
+			case RPARENTHESIS:
+			case COMMA:
+			case ASSIGN:
+			case LBRACKET:
+			case RBRACKET:
+			case IOR:
+			case XOR:
+			case AND:
+			case EQU:
+			case NEQ:
+			case LEQ:
+			case GEQ:
+			case LTH:
+			case GTH:
+			case ADD:
+			case SUB:
+			case MUL:
+			case DIV:
+			case MOD:
+			case DOT:
+			case RBRACE:
+			case WHERE:
+			case THEN:
+			case DO: {
+				break;
+			}
+			case LPARENTHESIS: {
+				add(node);
+				node.add(parseArgsEps());
+				add(node, Symbol.Term.RPARENTHESIS, createErrorMessage(Symbol.Term.RPARENTHESIS));
+				break;
+			}
+			default: {
+				throw createError("CallEps");
+			}
+
+		}
+		return node;
+	}
+
+	private DerNode parseArgsEps(){
+		DerNode node = new DerNode(DerNode.Nont.ArgsEps);
+		if (currSymb.token.equals(Symbol.Term.RPARENTHESIS)){
+			return node;
+		} else {
+			node.add(parseArgs());
+			node.add(parseArgsRest());
+			return node;
+		}
+	}
+
+	private DerNode parseArgs(){
+		DerNode node = new DerNode(DerNode.Nont.Args);
+		node.add(parseDisjExpr());
+		return node;
+	}
+
+	private DerNode parseArgsRest(){
+		DerNode node = new DerNode(DerNode.Nont.ArgsRest);
+		switch (currSymb.token){
+			case RPARENTHESIS: {
+				break;
+			}
+			case COMMA: {
+				add(node);
+				node.add(parseArgs());
+				node.add(parseArgsRest());
+				break;
+			}
+			default: {
+				throw createError("ArgsRest");
+			}
+		}
+		return node;
+	}
+
+	private DerNode parseCastEps(){
+		DerNode node = new DerNode(DerNode.Nont.CastEps);
+		switch (currSymb.token){
+			case RPARENTHESIS: {
+				break;
+			}
+			case COLON: {
+				add(node);
+				node.add(parseType());
+				break;
+			}
+			default: {
+				throw createError("CastEps");
 			}
 		}
 		return node;
@@ -397,8 +759,11 @@ public class SynAn extends Phase {
 				node.add(parseDecls());
 				break;
 			}
+			case RBRACE: {
+				break;
+			}
 			default: {
-
+				throw createError("WhereEps");
 			}
 		}
 		return node;
@@ -406,33 +771,8 @@ public class SynAn extends Phase {
 
 	private DerNode parseStmts(){
 		DerNode node = new DerNode(DerNode.Nont.Stmts);
-		switch (currSymb.token){
-			case IDENTIFIER:
-			case LPARENTHESIS:
-			case LBRACE:
-			case ADD:
-			case SUB:
-			case NOT:
-			case DATA:
-			case ADDR:
-			case NEW:
-			case DEL:
-			case IF:
-			case WHILE:
-			case VOIDCONST:
-			case BOOLCONST:
-			case INTCONST:
-			case PTRCONST:
-			case STRCONST:
-			case CHARCONST:{
-				node.add(parseStmt());
-				node.add(parseStmtsRest());
-				break;
-			}
-			default: {
-
-			}
-		}
+		node.add(parseStmt());
+		node.add(parseStmtsRest());
 		return node;
 	}
 
@@ -455,32 +795,32 @@ public class SynAn extends Phase {
 			case PTRCONST:
 			case STRCONST:
 			case CHARCONST: {
-				node.add(parseExpr());
+				node.add(parseDisjExpr());
 				node.add(parseAssignEps());
-				add(node, Symbol.Term.SEMIC, "");
+				add(node, Symbol.Term.SEMIC, createErrorMessage(Symbol.Term.SEMIC));
 				break;
 			}
 			case IF:{
-				add(node, Symbol.Term.IF, "");
-				node.add(parseExpr());
-				add(node,Symbol.Term.THEN,"");
+				add(node);
+				node.add(parseDisjExpr());
+				add(node,Symbol.Term.THEN, createErrorMessage(Symbol.Term.THEN));
 				node.add(parseStmts());
 				node.add(parseElseEps());
-				add(node,Symbol.Term.END,"");
-				add(node,Symbol.Term.SEMIC, "");
+				add(node,Symbol.Term.END, createErrorMessage(Symbol.Term.END));
+				add(node,Symbol.Term.SEMIC, createErrorMessage(Symbol.Term.SEMIC));
 				break;
 			}
 			case WHILE: {
-				add(node, Symbol.Term.WHILE, "");
-				node.add(parseExpr());
-				add(node, Symbol.Term.DO, "");
+				add(node);
+				node.add(parseDisjExpr());
+				add(node, Symbol.Term.DO, createErrorMessage(Symbol.Term.DO));
 				node.add(parseStmts());
-				add(node, Symbol.Term.END, "");
-				add(node, Symbol.Term.SEMIC, "");
+				add(node, Symbol.Term.END, createErrorMessage(Symbol.Term.END));
+				add(node, Symbol.Term.SEMIC, createErrorMessage(Symbol.Term.SEMIC));
 				break;
 			}
 			default: {
-
+				throw createError("Stmt");
 			}
 		}
 		return node;
@@ -516,7 +856,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-
+				throw createError("StmtsRest");
 			}
 		}
 		return node;
@@ -529,12 +869,12 @@ public class SynAn extends Phase {
 				break;
 			}
 			case ASSIGN:{
-				add(node, Symbol.Term.ASSIGN, "");
-				node.add(parseExpr());
+				add(node);
+				node.add(parseDisjExpr());
 				break;
 			}
 			default: {
-
+				throw createError("AssignEps");
 			}
 		}
 		return node;
@@ -547,14 +887,23 @@ public class SynAn extends Phase {
 				break;
 			}
 			case ELSE:{
-				add(node, Symbol.Term.ELSE, "");
+				add(node);
 				node.add(parseStmts());
 				break;
 			}
 			default: {
-
+				throw createError("ElseEps");
 			}
 		}
 		return node;
+	}
+
+	private Report.Error createError(String nonterminal){
+	    return new Report.Error(currSymb,
+				String.format("Symbol '%s' [%s] unexpected in nonterminal '%s'.", currSymb, currSymb.token, nonterminal));
+    }
+
+    private String createErrorMessage(Symbol.Term expected){
+		return String.format("Unexpected token: received %s instead of %s.", currSymb.token, expected);
 	}
 }

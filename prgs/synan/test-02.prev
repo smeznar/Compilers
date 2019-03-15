@@ -1,0 +1,36 @@
+fun f ( ) : char =  {if true 
+					then 
+					b = 5;
+					else
+					a = 2;
+					end;
+					: a
+					};
+var bbb : rec (h:bool);
+var i:int;
+fun f ( a:char,b:int ) : char;
+fun f ( ) : char;
+fun f ( ) : char = true ;
+fun f ( ) : char =  6 + 7 * ( 3 + 4 ) / a.b * 3[4+3 +( 2+2 ) +  ( 2 )] ;
+fun f ( ) : char =  a.b ;
+fun f ( ) : char =  a[(3 *a )- a.b[2] ] ;
+fun f ( ) : char =  {if true 
+					then 
+					b = d.h;
+					a = 4+3;
+					b = 4*(2+5);
+					c = d[c.d];
+					a(;
+					a(6);
+					("YOLO");
+					(A : bool);
+					new (ptr char);
+					while i < 5 do 
+						a = new ( int );
+						a[i] = 5;
+					end;
+					
+					end;
+							: a} ;
+typ h : cha ;
+var aaa : arr [a < 5] void ;

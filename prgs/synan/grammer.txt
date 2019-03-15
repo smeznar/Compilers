@@ -2,12 +2,12 @@ Source -> Decls .
 
 Decls -> Decl DeclsRst .
 
-DeclsRst -> .
-DeclsRst -> Decls.
-
 Decl -> typ identifier : Type ; .
 Decl -> var identifier : Type ; .
-Decl -> fun identifier ( ParDeclsEps ) : Type BodyEps .
+Decl -> fun identifier ( ParDeclsEps ) : Type BodyEps ; .
+
+DeclsRst -> .
+DeclsRst -> Decls.
 
 ParDeclsEps -> .
 ParDeclsEps -> ParDecls .
@@ -20,10 +20,10 @@ ParDeclsRest -> .
 ParDeclsRest -> , ParDecls .
 
 BodyEps -> .
-BodyEps -> = Expr .
+BodyEps -> = DisjExpr .
 
 Type -> void | int | char | bool .
-Type -> arr [ Expr ] Type | ptr Type .
+Type -> arr [ DisjExpr ] Type | ptr Type .
 Type -> identifier | ( Type ).
 Type -> rec ( CompDecls ) .
 
@@ -33,8 +33,6 @@ CompDecl -> identifier : Type .
 
 CompDeclsRest -> .
 CompDeclsRest -> , CompDecls .
-
-Expr -> DisjExpr .
 
 DisjExpr -> ConjExpr DisjExprRest .
 
@@ -63,16 +61,17 @@ MulExprRest -> .
 MulExprRest -> * MulExpr | / MulExpr | % MulExpr.
 
 PrefExpr -> PstfExpr | ! PrefExpr | + PrefExpr | - PrefExpr .
-PrefExpr -> @ PrefExpr | $ PrefExpr | new ( Type ) | del ( Expr ) .
+PrefExpr -> @ PrefExpr | $ PrefExpr | new ( Type ) | del ( DisjExpr ) .
 
-PstfExpr -> AtomExpr PstfExprRest .
+PstfExpr -> Expr PstfExprRest .
 
 PstfExprRest -> .
-PstfExprRest -> [ Expr ] PstfExprRest .
+PstfExprRest -> [ DisjExpr ] PstfExprRest .
 PstfExprRest -> ~ identifier PstfExprRest .
 
-AtomExpr -> literal | identifier CallEps | ( Expr CastEps ).
-AtomExpr -> { Stmts : Expr WhereEps } .
+Expr -> AtomExpr | ( DisjExpr CastEps ) | { Stmts : DisjExpr WhereEps } .
+
+AtomExpr -> literal | identifier CallEps .
 
 CallEps -> .
 CallEps -> ( ArgsEps ) .
@@ -80,26 +79,28 @@ CallEps -> ( ArgsEps ) .
 ArgsEps -> .
 ArgsEps -> Args ArgsRest .
 
-Args -> Expr .
+Args -> DisjExpr .
 
-ArgsRest -> , ArgsEps .
+ArgsRest -> , Args ArgsRest .
+ArgsRest -> .
 
 CastEps -> .
 CastEps -> : Type .
 
 WhereEps -> where Decls .
+WhereEps -> .
 
 Stmts -> Stmt StmtsRest.
+
+Stmt -> DisjExpr AssignEps ; .
+Stmt -> if DisjExpr then Stmts ElseEps end ; .
+Stmt -> while DisjExpr do Stmts end ; .
 
 StmtsRest -> .
 StmtsRest -> Stmts.
 
-Stmt -> Expr AssignEps ; .
-Stmt -> if Expr then Stmts ElseEps end ; .
-Stmt -> while Expr do Stmts end ; .
-
 AssignEps -> .
-AssignEps -> = Expr .
+AssignEps -> = DisjExpr .
 
 ElseEps -> .
 ElseEps -> else Stmts .

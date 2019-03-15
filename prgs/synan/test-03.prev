@@ -1,0 +1,7 @@
+fun f ( ) : char =  {
+				a();
+				a(1,2,3);
+				: a};
+				
+				
+				#POPRAV ARGS NE DELA PROU
