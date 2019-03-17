@@ -129,7 +129,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("Decl");
+				throw createError("Decl (Declaration)");
 			}
 		}
 		return node;
@@ -149,7 +149,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-                throw createError("DeclsRest");
+                throw createError("DeclsRest (Declaration)");
 			}
 		}
 		return node;
@@ -180,7 +180,7 @@ public class SynAn extends Phase {
 			node.add(parseType());
 			return node;
 		} else {
-			throw createError("ParDecl");
+			throw createError("ParDecl (Parameter Declaration)");
 		}
 	}
 
@@ -196,7 +196,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("ParDeclsRest");
+				throw createError("ParDeclsRest (Parameter Declaration)");
 			}
 		}
 		return node;
@@ -213,7 +213,7 @@ public class SynAn extends Phase {
 				node.add(parseDisjExpr());
 				break;
 			default: {
-				throw createError("BodyEps");
+				throw createError("BodyEps (Function Body)");
 			}
 		}
 		return node;
@@ -278,7 +278,7 @@ public class SynAn extends Phase {
 			node.add(parseType());
 			return node;
 		} else {
-			throw createError("CompDecl");
+			throw createError("CompDecl (Compound Declaration)");
 		}
 	}
 
@@ -294,7 +294,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("CompDeclsRest");
+				throw createError("CompDeclsRest (Compound Declaration)");
 			}
 		}
 		return node;
@@ -329,7 +329,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("DisjExprRest");
+				throw createError("DisjExprRest (Disjunctive Expression)");
 			}
 		}
 		return node;
@@ -365,7 +365,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("ConjExprRest");
+				throw createError("ConjExprRest (Conjunctive Expression)");
 			}
 		}
 		return node;
@@ -407,7 +407,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("RelExprRest");
+				throw createError("RelExprRest (Relational Expression)");
 			}
 		}
 		return node;
@@ -451,7 +451,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("AddExprRest");
+				throw createError("AddExprRest (Additive Expression)");
 			}
 		}
 		return node;
@@ -498,7 +498,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("MulExprRest");
+				throw createError("MulExprRest (Multiplicative Expression)");
 			}
 		}
 		return node;
@@ -543,7 +543,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("PrefExpr");
+				throw createError("PrefExpr (Prefix Expression)");
 			}
 		}
 		return node;
@@ -599,7 +599,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("PstfExprRest");
+				throw createError("PstfExprRest (Postfix Expression)");
 			}
 		}
 		return node;
@@ -635,7 +635,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("Expr");
+				throw createError("Expr (Expression)");
 			}
 		}
 		return node;
@@ -690,7 +690,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("CallEps");
+				throw createError("CallEps (Function Call)");
 			}
 
 		}
@@ -727,7 +727,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("ArgsRest");
+				throw createError("ArgsRest (Arguments)");
 			}
 		}
 		return node;
@@ -745,7 +745,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("CastEps");
+				throw createError("CastEps (Cast Expression)");
 			}
 		}
 		return node;
@@ -763,7 +763,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("WhereEps");
+				throw createError("WhereEps (Where)");
 			}
 		}
 		return node;
@@ -820,7 +820,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("Stmt");
+				throw createError("Stmt (Statement)");
 			}
 		}
 		return node;
@@ -856,7 +856,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("StmtsRest");
+				throw createError("StmtsRest (Statement)");
 			}
 		}
 		return node;
@@ -874,7 +874,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("AssignEps");
+				throw createError("AssignEps (Assign Statement)");
 			}
 		}
 		return node;
@@ -892,7 +892,7 @@ public class SynAn extends Phase {
 				break;
 			}
 			default: {
-				throw createError("ElseEps");
+				throw createError("ElseEps (Else)");
 			}
 		}
 		return node;
