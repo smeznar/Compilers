@@ -37,12 +37,12 @@ CompDeclsRest -> , CompDecls .
 DisjExpr -> ConjExpr DisjExprRest .
 
 DisjExprRest -> .
-DisjExprRest -> \ DisjExpr | ^ DisjExpr .
+DisjExprRest -> \ ConjExpr DisjExprRest | ^ ConjExpr DisjExprRest .
 
 ConjExpr -> RelExpr ConjExprRest .
 
 ConjExprRest -> .
-ConjExprRest -> & ConjExpr.
+ConjExprRest -> & RelExpr ConjExprRest.
 
 RelExpr -> AddExpr RelExprRest.
 
@@ -53,12 +53,12 @@ RelExprRest -> mte AddExpr | < AddExpr | > AddExpr .
 AddExpr -> MulExpr AddExprRest.
 
 AddExprRest -> .
-AddExprRest -> + AddExpr | - AddExpr.
+AddExprRest -> + MulExpr AddExprRest | - MulExpr AddExprRest.
 
 MulExpr -> PrefExpr MulExprRest.
 
 MulExprRest -> .
-MulExprRest -> * MulExpr | / MulExpr | % MulExpr.
+MulExprRest -> * PrefExpr MulExprRest | / PrefExpr MulExprRest | % PrefExpr MulExprRest .
 
 PrefExpr -> PstfExpr | ! PrefExpr | + PrefExpr | - PrefExpr .
 PrefExpr -> @ PrefExpr | $ PrefExpr | new ( Type ) | del ( DisjExpr ) .

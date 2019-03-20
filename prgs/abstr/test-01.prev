@@ -1,1 +1,12 @@
 var i:int;
+typ j:char;
+typ k:bool;
+typ l:void;
+var m:ptr nekej;
+var n: rec(bla:kla);
+var n: rec(bla:kla, on:(maja));
+fun funkcija () : int ;
+fun funkcija (en:dva) : int ;
+fun funkcija (en:dva, stiri:pet) : (tri) ;
+var j :arr [a | b | c] int;
+var j :arr [a | b & d| c] int;

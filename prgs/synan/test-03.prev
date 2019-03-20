@@ -2,6 +2,7 @@ fun f ( ) : char =  {
 				a();
 				a(1,2,3);
 				: a};
-				
+
+fun f(): int =  {a();a(1,2,3);: a where typ a:int;}[-8+4*9==5][2];
 				
 				#POPRAV ARGS NE DELA PROU

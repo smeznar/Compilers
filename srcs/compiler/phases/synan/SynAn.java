@@ -105,7 +105,7 @@ public class SynAn extends Phase {
 	}
 
 	private DerNode parseDecl(){
-		DerNode node = new DerNode(DerNode.Nont.Decls);
+		DerNode node = new DerNode(DerNode.Nont.Decl);
 		switch (currSymb.token){
 			case TYP:
 			case VAR: {
@@ -325,7 +325,8 @@ public class SynAn extends Phase {
 			case IOR:
 			case XOR: {
 				add(node);
-				node.add(parseDisjExpr());
+				node.add(parseConjExpr());
+				node.add(parseDisjExprRest());
 				break;
 			}
 			default: {
@@ -361,7 +362,8 @@ public class SynAn extends Phase {
 			}
 			case AND: {
 				add(node);
-				node.add(parseConjExpr());
+				node.add(parseRelExpr());
+				node.add(parseConjExprRest());
 				break;
 			}
 			default: {
@@ -447,7 +449,8 @@ public class SynAn extends Phase {
 			case ADD:
 			case SUB:{
 				add(node);
-				node.add(parseAddExpr());
+				node.add(parseMulExpr());
+				node.add(parseAddExprRest());
 				break;
 			}
 			default: {
@@ -494,7 +497,8 @@ public class SynAn extends Phase {
 			case DIV:
 			case MOD:{
 				add(node);
-				node.add(parseMulExpr());
+				node.add(parsePrefExpr());
+				node.add(parseMulExprRest());
 				break;
 			}
 			default: {
