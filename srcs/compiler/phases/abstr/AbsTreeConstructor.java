@@ -313,9 +313,7 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 							return node.subtree(3).accept(this, new AbsArrExpr(node, (AbsExpr) visArg, index));
 						} else if (op.symb.token == Symbol.Term.DOT) {
 							DerLeaf idLeaf = (DerLeaf) node.subtree(1);
-							//return node.subtree(2).accept(this, new )
-							//TODO
-							return visArg;
+							return node.subtree(2).accept(this, new AbsRecExpr(node, (AbsExpr) visArg, new AbsVarName(idLeaf, idLeaf.symb.lexeme)));
 						} else {
 							return null;
 						}
