@@ -1,13 +1,13 @@
 Source -> Decls .
 
-Decls -> Decl DeclsRst .
+Decls -> Decl DeclsRest .
 
 Decl -> typ identifier : Type ; .
 Decl -> var identifier : Type ; .
 Decl -> fun identifier ( ParDeclsEps ) : Type BodyEps ; .
 
-DeclsRst -> .
-DeclsRst -> Decls.
+DeclsRest -> .
+DeclsRest -> Decls.
 
 ParDeclsEps -> .
 ParDeclsEps -> ParDecls .

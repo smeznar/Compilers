@@ -8,5 +8,5 @@ var n: rec(bla:kla, on:(maja));
 fun funkcija () : int ;
 fun funkcija (en:dva) : int ;
 fun funkcija (en:dva, stiri:pet) : (tri) ;
-var j :arr [a | b | c] int;
+var j :arr [a | b | c] int
 var j :arr [a | b & d| c] int;

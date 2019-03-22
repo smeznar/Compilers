@@ -904,10 +904,10 @@ public class SynAn extends Phase {
 
 	private Report.Error createError(String nonterminal){
 	    return new Report.Error(currSymb,
-				String.format("Symbol '%s' [%s] unexpected in nonterminal '%s'.", currSymb, currSymb.token, nonterminal));
+				String.format("[SynAn] Symbol '%s' [%s] unexpected in nonterminal '%s'.", currSymb, currSymb.token, nonterminal));
     }
 
     private String createErrorMessage(Symbol.Term expected){
-		return String.format("Unexpected token: received %s instead of %s.", currSymb.token, expected);
+		return String.format("[SynAn] Unexpected token: received %s instead of %s.", currSymb.token, expected);
 	}
 }

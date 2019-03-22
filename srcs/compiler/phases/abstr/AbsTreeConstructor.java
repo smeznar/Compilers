@@ -140,7 +140,7 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 						} else if (op.symb.token == Symbol.Term.IOR){
 							operator = AbsBinExpr.Oper.IOR;
 						} else {
-							operator = null;
+							throw createError(node);
 						}
 						return node.subtree(2).accept(this, new AbsBinExpr(new Location(visArg,node), operator, (AbsExpr) visArg, conjExpr));
 					}
@@ -161,7 +161,7 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 						if (op.symb.token == Symbol.Term.AND){
 							operator = AbsBinExpr.Oper.AND;
 						} else {
-							operator = null;
+							throw createError(node);
 						}
 						return node.subtree(2).accept(this, new AbsBinExpr(new Location(visArg,node), operator, (AbsExpr) visArg, relExpr));
 					}
@@ -205,7 +205,7 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 								break;
 							}
 							default: {
-								operator = null;
+								throw createError(node);
 							}
 						}
 						return new AbsBinExpr(new Location(visArg,node), operator, (AbsExpr) visArg, addExpr);
@@ -229,7 +229,7 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 						} else if (op.symb.token == Symbol.Term.SUB){
 							operator = AbsBinExpr.Oper.SUB;
 						} else {
-							operator = null;
+							throw createError(node);
 						}
 						return node.subtree(2).accept(this, new AbsBinExpr(new Location(visArg,node), operator, (AbsExpr) visArg, mulExpr));
 					}
@@ -254,7 +254,7 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 						} else if (op.symb.token == Symbol.Term.MOD){
 							operator = AbsBinExpr.Oper.MOD;
 						}else {
-							operator = null;
+							throw createError(node);
 						}
 						return node.subtree(2).accept(this, new AbsBinExpr(new Location(visArg,node), operator, (AbsExpr) visArg, prefExpr));
 					}
@@ -294,6 +294,9 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 								AbsExpr delExpr = (AbsExpr) node.subtree(2).accept(this, null);
 								return new AbsDelExpr(node, delExpr);
 							}
+							default: {
+								throw createError(node);
+							}
 						}
 					}
 				}
@@ -315,7 +318,7 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 							DerLeaf idLeaf = (DerLeaf) node.subtree(1);
 							return node.subtree(2).accept(this, new AbsRecExpr(node, (AbsExpr) visArg, new AbsVarName(idLeaf, idLeaf.symb.lexeme)));
 						} else {
-							return null;
+							throw createError(node);
 						}
 					}
 				}
@@ -331,6 +334,8 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 						AbsExpr expr = (AbsExpr) node.subtree(3).accept(this, null);
 						AbsDecls decls = (AbsDecls) node.subtree(4).accept(this, null);
 						return new AbsBlockExpr(node, decls, stmts, expr);
+					} else {
+						throw createError(node);
 					}
 				}
 
@@ -363,6 +368,9 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 							} else {
 								return new AbsFunName(node, id.symb.lexeme, (AbsArgs) args);
 							}
+						}
+						default: {
+							throw createError(node);
 						}
 					}
 				}
@@ -439,7 +447,7 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 						AbsExpr expr = (AbsExpr) node.subtree(0).accept(this, null);
 						AbsExpr assign = (AbsExpr) node.subtree(1).accept(this, null);
 						if (assign == null){
-							return new AbsExprStmt(node,expr);
+							return new AbsExprStmt(node, expr);
 						} else {
 							return new AbsAssignStmt(node, expr, assign);
 						}
@@ -453,7 +461,7 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 						AbsStmts el = (AbsStmts) node.subtree(4).accept(this, null);
 						return new AbsIfStmt(node, expr, then, el);
 					} else {
-						return null;
+						throw createError(node);
 					}
 				}
 
@@ -482,13 +490,12 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 					}
 				}
 				default: {
-
+					throw createError(node);
 				}
 			}
 		} catch (Exception e){
 			throw new Report.Error(node, String.format("Error occured in a node with label: %s", node.label));
 		}
-		return null;
 	}
 
 	private AbsTree parseDecl(DerNode node) {
@@ -519,10 +526,9 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 				}
 			}
 			default: {
-
+				throw createError(node);
 			}
 		}
-		return null;
 	}
 
 	private AbsTree parseType(DerNode node) {
@@ -560,10 +566,13 @@ public class AbsTreeConstructor implements DerVisitor<AbsTree, AbsTree> {
 				return new AbsRecType(node, compDecls);
 			}
 			default: {
-
+				throw createError(node);
 			}
 		}
-		return null;
+	}
+
+	private Report.Error createError(DerNode node){
+		return new Report.Error(node, String.format("Error in nonterminal %s",node.label));
 	}
 
 }

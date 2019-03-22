@@ -435,6 +435,6 @@ public class LexAn extends Phase {
     }
 
     private Report.Error throwError(String message){
-        return new Report.Error(getLocation(), message);
+        return new Report.Error(getLocation(), String.format("[LexAn]: %s", message));
     }
 }
