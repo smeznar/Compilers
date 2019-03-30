@@ -2,16 +2,16 @@ var i:int;
 typ j:char;
 typ k:bool;
 typ l:void;
-var m:ptr nekej;
-var n: rec(bla:kla);
-var n: rec(bla:kla, on:(maja));
-fun funkcija () : int ;
-fun funkcija (en:dva) : int ;
-fun funkcija (en:dva, stiri:pet) : (tri) ;
-var j :arr [a | b | c] int;
-var j :arr [a | b & d| c] int;
-typ a:int;
-fun f(): void = {
+var m:ptr j;
+var n: rec(bla:k);
+var o: rec(bla:l, on:(j));
+fun p () : int ;
+fun r (en:j) : int ;
+fun s (en:k, stiri:l) : (tri) ;
+var t :arr [a | b | c] int;
+var u :arr [a | b & d| c] int;
+typ v:int;
+fun z(): void = {
     a = 3;
     : 12
 };
