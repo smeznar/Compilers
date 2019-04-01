@@ -23,8 +23,6 @@ public class NameResolver extends AbsFullVisitor<Object, Object> {
 	private static final int VAR_FUN_DECLARATION_PH = 3;
 	private static final int FUNCTION_PH = 4;
 
-	private static boolean isDefinition = false;
-
 	@Override
 	public Object visit(AbsSource source, Object visArg) {
 		for (int i=0; i<5; i++){
@@ -112,9 +110,10 @@ public class NameResolver extends AbsFullVisitor<Object, Object> {
 			} else if ((int) visArg==VAR_FUN_DECLARATION_PH){
 				symbTable.ins(decl.name, decl);
 			} else if ((int) visArg==FUNCTION_PH){
-				isDefinition = false;
 				decl.type.accept(this, visArg);
+				symbTable.newScope();
 				decl.parDecls.accept(this, visArg);
+				symbTable.oldScope();
 			}
 		} catch (SymbTable.CannotInsNameException e){
 			throw createInsertionError(decl);
@@ -133,7 +132,6 @@ public class NameResolver extends AbsFullVisitor<Object, Object> {
 			} else if ((int) visArg==VAR_FUN_DECLARATION_PH){
 				symbTable.ins(decl.name, decl);
 			} else if ((int) visArg==FUNCTION_PH){
-				isDefinition = true;
 				decl.type.accept(this, visArg);
 				symbTable.newScope();
 				decl.parDecls.accept(this, visArg);
@@ -155,9 +153,7 @@ public class NameResolver extends AbsFullVisitor<Object, Object> {
 				par.type.accept(this, visArg);
 			} else if ((int) visArg==FUNCTION_PH){
 				par.type.accept(this, visArg);
-				if (isDefinition) {
-					symbTable.ins(par.name, par);
-				}
+				symbTable.ins(par.name, par);
 			}
 		} catch (SymbTable.CannotInsNameException e){
 			throw createInsertionError(par);
