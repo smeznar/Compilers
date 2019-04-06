@@ -20,7 +20,7 @@ import compiler.data.type.property.*;
 public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     public enum Phase {
-        AddNamedTypes, MapTypes, CheckTypes
+        AddNamedTypes, ResolveTyp, MapTypes, CheckTypes
     }
 
     /** Symbol tables of individual record types. */
@@ -29,6 +29,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
     @Override
     public SemType visit(AbsSource source, TypeResolver.Phase visArg) {
         super.visit(source, Phase.AddNamedTypes);
+        super.visit(source, Phase.ResolveTyp);
         super.visit(source, Phase.MapTypes);
         super.visit(source, Phase.CheckTypes);
         return null;
@@ -38,18 +39,23 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
     public SemType visit(AbsTypDecl decl, TypeResolver.Phase visArg) {
         if (visArg == Phase.AddNamedTypes) {
             SemAn.declaresType.put(decl, new SemNamedType(decl.name));
-        } else if (visArg == Phase.MapTypes) {
+        } else if (visArg == Phase.ResolveTyp) {
             SemType type = decl.type.accept(this, visArg);
             SemNamedType named = SemAn.declaresType.get(decl);
             named.define(type);
+        } else if(visArg == Phase.MapTypes){
+            decl.type.accept(this, visArg);
         }
         return null;
     }
 
     @Override
     public SemType visit(AbsVarDecl decl, TypeResolver.Phase visArg) {
+        if (visArg == Phase.ResolveTyp){
+            decl.type.accept(this, visArg);
+        }
         if (visArg == Phase.MapTypes) {
-            SemType type = decl.type.accept(this, visArg);
+            SemType type = decl.type.accept(this, visArg).actualType();
             if (type instanceof SemVoidType) {
                 throw createError(decl, "A variable cannot be of type VOID.");
             }
@@ -59,8 +65,11 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsFunDecl decl, TypeResolver.Phase visArg) {
-        if (visArg == Phase.MapTypes) {
-            SemType returnType = decl.type.accept(this, visArg);
+        if (visArg == Phase.ResolveTyp){
+            decl.parDecls.accept(this, visArg);
+            decl.type.accept(this, visArg);
+        } else if (visArg == Phase.MapTypes) {
+            SemType returnType = decl.type.accept(this, visArg).actualType();
             if (!(returnType instanceof SemVoidType || returnType instanceof SemIntType
                     || returnType instanceof SemCharType || returnType instanceof SemBoolType
                     || returnType instanceof SemPtrType)) {
@@ -73,10 +82,12 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsFunDef decl, TypeResolver.Phase visArg) {
-        if (visArg == Phase.AddNamedTypes) {
+        if (visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp) {
+            decl.type.accept(this, visArg);
+            decl.parDecls.accept(this, visArg);
             decl.value.accept(this, visArg);
         } else if (visArg == Phase.MapTypes) {
-            SemType returnType = decl.type.accept(this, visArg);
+            SemType returnType = decl.type.accept(this, visArg).actualType();
             if (!(returnType instanceof SemVoidType || returnType instanceof SemIntType
                     || returnType instanceof SemCharType || returnType instanceof SemBoolType
                     || returnType instanceof SemPtrType)) {
@@ -85,20 +96,18 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
             decl.parDecls.accept(this, visArg);
             decl.value.accept(this, visArg);
         } else if (visArg == Phase.CheckTypes) {
-            SemType returnType = decl.value.accept(this, visArg);
-
-			/*
-			SemType type = SemAn.isType.get(decl.type);
-			if (!returnType.toString().equals(type.toString())){
+            SemType returnType = decl.value.accept(this, visArg).actualType();
+			SemType type = SemAn.isType.get(decl.type).actualType();
+			if (!returnType.matches(type)){
 				throw createError(decl, "Returned type and actual return type don't match.");
-			}*/
+			}
         }
         return null;
     }
 
     @Override
     public SemType visit(AbsParDecl parDecl, TypeResolver.Phase visArg) {
-        if (visArg == Phase.MapTypes) {
+        if (visArg == Phase.MapTypes || visArg == Phase.ResolveTyp) {
             parDecl.type.accept(this, visArg);
         } else if (visArg == Phase.CheckTypes) {
             return SemAn.isType.get(parDecl.type);
@@ -108,8 +117,8 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsAtomType atom, TypeResolver.Phase visArg) {
-        if (visArg == Phase.MapTypes) {
-            SemType type = null;
+        if (visArg == Phase.MapTypes || visArg == Phase.ResolveTyp) {
+            SemType type;
             switch (atom.type) {
                 case INT: {
                     type = new SemIntType();
@@ -131,7 +140,9 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
                     throw createError(atom, "Unknown atom type.");
                 }
             }
-            SemAn.isType.put(atom, type);
+            if (SemAn.isType.get(atom) == null){
+                SemAn.isType.put(atom, type);
+            }
             return type;
         }
         return null;
@@ -139,7 +150,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsArrType arr, TypeResolver.Phase visArg) {
-        if (visArg == Phase.MapTypes) {
+        if (visArg == Phase.ResolveTyp) {
             long length = -1;
             if (arr.len instanceof AbsAtomExpr && ((AbsAtomExpr) arr.len).type == AbsAtomExpr.Type.INT) {
                 try {
@@ -150,47 +161,44 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
             } else {
                 throw createError(arr, "Array lenght should an integer constant.");
             }
-            SemType type = arr.elemType.accept(this, visArg);
             if (length < 1) {
                 throw createError(arr, "Array length should be a positive integer.");
             }
-            if (type instanceof SemVoidType) {
-                throw createError(arr, "Array cannot be of type VOID.");
-            }
+            SemAn.ofType.put(arr.len, new SemIntType());
+            SemType type = arr.elemType.accept(this, visArg);
 
             SemType array = new SemArrType(length, type);
             SemAn.isType.put(arr, array);
             return array;
+        } else if (visArg == Phase.MapTypes){
+            SemType type = arr.elemType.accept(this, visArg);
+            if (type.actualType() instanceof SemVoidType) {
+                throw createError(arr, "Array cannot be of type VOID.");
+            }
+            return SemAn.isType.get(arr);
         }
         return null;
     }
 
     @Override
     public SemType visit(AbsRecType rec, TypeResolver.Phase visArg) {
-        if (visArg == Phase.MapTypes) {
+        if (visArg == Phase.ResolveTyp) {
             SemType recType = rec.compDecls.accept(this, visArg);
             SemAn.isType.put(rec, recType);
-        }
-        return null;
-    }
-
-    @Override
-    public SemType visit(AbsCompDecl compDecl, TypeResolver.Phase visArg) {
-        if (visArg == Phase.MapTypes) {
-            return compDecl.type.accept(this, visArg);
+            return recType;
+        } else if (visArg == Phase.MapTypes){
+            rec.compDecls.accept(this, visArg);
+            return SemAn.isType.get(rec);
         }
         return null;
     }
 
     @Override
     public SemType visit(AbsCompDecls compDecls, TypeResolver.Phase visArg) {
-        if (visArg == Phase.MapTypes) {
+        if (visArg == Phase.ResolveTyp) {
             Vector<SemType> compTypes = new Vector<SemType>();
             for (AbsCompDecl comp : compDecls.compDecls()) {
                 SemType type = comp.accept(this, visArg);
-                if (type instanceof SemVoidType) {
-                    throw createError(compDecls, "A component cannot be of type VOID.");
-                }
                 compTypes.add(type);
             }
             SemRecType record = new SemRecType(compTypes);
@@ -204,31 +212,49 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
             }
             symbTables.put(record, recSymbols);
             return record;
+        } else if (visArg == Phase.MapTypes){
+            for (AbsCompDecl comp : compDecls.compDecls()) {
+                if (comp.accept(this, visArg).actualType() instanceof SemVoidType) {
+                    throw createError(compDecls, "A component cannot be of type VOID.");
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public SemType visit(AbsCompDecl compDecl, TypeResolver.Phase visArg) {
+        if (visArg == Phase.ResolveTyp) {
+            return compDecl.type.accept(this, visArg);
+        } else if (visArg == Phase.MapTypes){
+            return SemAn.isType.get(compDecl.type);
         }
         return null;
     }
 
     @Override
     public SemType visit(AbsPtrType ptr, TypeResolver.Phase visArg) {
-        if (visArg == Phase.MapTypes) {
+        if (visArg == Phase.ResolveTyp) {
             SemType typ = ptr.ptdType.accept(this, visArg);
             SemType type = new SemPtrType(typ);
             SemAn.isType.put(ptr, type);
             return type;
+        } else if (visArg == Phase.MapTypes){
+            return SemAn.isType.get(ptr);
         }
         return null;
     }
 
     @Override
     public SemType visit(AbsUnExpr expr, TypeResolver.Phase visArg) {
-        if (visArg == Phase.AddNamedTypes || visArg == Phase.MapTypes) {
+        if (visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp || visArg == Phase.MapTypes) {
             expr.subExpr.accept(this, visArg);
         } else if (visArg == Phase.CheckTypes) {
             SemType subExpr = expr.subExpr.accept(this, visArg).actualType();
             switch (expr.oper) {
                 case ADD:
                 case SUB: {
-                    if (subExpr instanceof SemIntType) {
+                    if (subExpr.actualType() instanceof SemIntType) {
                         SemType type = new SemIntType();
                         SemAn.ofType.put(expr, type);
                         return type;
@@ -237,7 +263,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
                     }
                 }
                 case NOT: {
-                    if (subExpr instanceof SemBoolType) {
+                    if (subExpr.actualType() instanceof SemBoolType) {
                         SemType type = new SemBoolType();
                         SemAn.ofType.put(expr, type);
                         return type;
@@ -246,7 +272,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
                     }
                 }
                 case ADDR: {
-                    if (subExpr instanceof SemVoidType) {
+                    if (subExpr.actualType() instanceof SemVoidType) {
                         throw createError(expr, "Type of expression should not be VOID.");
                     }
                     SemType type = new SemPtrType(subExpr);
@@ -254,9 +280,9 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
                     return type;
                 }
                 case DATA: {
-                    if (subExpr instanceof SemPtrType) {
+                    if (subExpr.actualType() instanceof SemPtrType) {
                         SemType type = ((SemPtrType) subExpr).ptdType;
-                        if (type instanceof SemVoidType) {
+                        if (type.actualType() instanceof SemVoidType) {
                             throw createError(expr, "Type of expression inside a PTR should not be VOID.");
                         }
                         SemAn.ofType.put(expr, type);
@@ -275,7 +301,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsBinExpr expr, TypeResolver.Phase visArg) {
-        if (visArg == Phase.AddNamedTypes || visArg == Phase.MapTypes) {
+        if (visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp || visArg == Phase.MapTypes) {
             expr.fstExpr.accept(this, visArg);
             expr.sndExpr.accept(this, visArg);
         } else if (visArg == Phase.CheckTypes) {
@@ -343,6 +369,38 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
     }
 
     @Override
+    public SemType visit(AbsNewExpr expr, TypeResolver.Phase visArg){
+        if (visArg == Phase.ResolveTyp ){
+            expr.type.accept(this, visArg);
+        } else if(visArg == Phase.MapTypes){
+            SemType type = expr.type.accept(this, visArg);
+            if (type.actualType() instanceof SemVoidType){
+                throw createError(expr, "New expression cannot be of type VOID.");
+            }
+            SemAn.ofType.put(expr,new SemPtrType(type));
+            return type;
+        } else if (visArg == Phase.CheckTypes){
+            return SemAn.ofType.get(expr);
+        }
+        return null;
+    }
+
+    @Override
+    public SemType visit(AbsDelExpr expr, TypeResolver.Phase visArg){
+        if (visArg == Phase.ResolveTyp || visArg == Phase.MapTypes){
+            expr.expr.accept(this, visArg);
+        } else if (visArg == Phase.CheckTypes) {
+            SemType type = expr.expr.accept(this, visArg);
+            if (type.actualType() instanceof SemVoidType) {
+                throw createError(expr, "Del expression cannot be of type VOID.");
+            }
+            SemAn.ofType.put(expr, type);
+            return type;
+        }
+        return null;
+    }
+
+    @Override
     public SemType visit(AbsAtomExpr expr, TypeResolver.Phase visArg) {
         if (visArg == Phase.CheckTypes) {
             switch (expr.type) {
@@ -382,11 +440,11 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsArrExpr arr, TypeResolver.Phase visArg) {
-        if (visArg == Phase.AddNamedTypes || visArg == Phase.MapTypes) {
+        if (visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp || visArg == Phase.MapTypes) {
             arr.array.accept(this, visArg);
         } else if (visArg == Phase.CheckTypes) {
-            SemType arrType = arr.array.accept(this, visArg);
-            SemType indexType = arr.index.accept(this, visArg);
+            SemType arrType = arr.array.accept(this, visArg).actualType();
+            SemType indexType = arr.index.accept(this, visArg).actualType();
             if (!(arrType instanceof SemArrType)) {
                 throw createError(arr, "Type of left side should be ARR.");
             }
@@ -401,14 +459,14 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
     }
 
     public SemType visit(AbsRecExpr rec, TypeResolver.Phase visArg) {
-        if (visArg == Phase.AddNamedTypes || visArg == Phase.MapTypes) {
+        if (visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp || visArg == Phase.MapTypes) {
             rec.record.accept(this, visArg);
         } else if (visArg == Phase.CheckTypes) {
             SemType expr = rec.record.accept(this, visArg);
-            if (!(expr instanceof SemRecType)) {
+            if (!(expr.actualType() instanceof SemRecType)) {
                 throw createError(rec, "Left side should be of type REC.");
             }
-            SymbTable recSym = symbTables.getOrDefault((SemRecType) expr, null);
+            SymbTable recSym = symbTables.getOrDefault((SemRecType) expr.actualType(), null);
             AbsDecl decl = null;
             try {
                 decl = recSym.fnd(rec.comp.name);
@@ -425,11 +483,14 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsCastExpr expr, TypeResolver.Phase visArg){
-        if(visArg == Phase.AddNamedTypes || visArg == Phase.MapTypes){
+        if(visArg == Phase.AddNamedTypes){
             expr.expr.accept(this, visArg);
+        } else if (visArg == Phase.ResolveTyp || visArg == Phase.MapTypes){
+            expr.expr.accept(this, visArg);
+            expr.type.accept(this, visArg);
         } else if (visArg == Phase.CheckTypes){
             SemType cast = expr.expr.accept(this, visArg).actualType();
-            SemType castType = expr.type.accept(this, visArg).actualType();
+            SemType castType = SemAn.isType.get(expr.type).actualType();
             if (!(cast instanceof SemCharType || cast instanceof SemIntType || cast instanceof  SemPtrType)){
                 throw createError(expr, "Expression inside cast expression should be of type INT, CHAR or PTR");
             }
@@ -444,7 +505,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsBlockExpr block, TypeResolver.Phase visArg) {
-        if (visArg == Phase.AddNamedTypes || visArg == Phase.MapTypes) {
+        if (visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp || visArg == Phase.MapTypes) {
             block.decls.accept(this, visArg);
             block.expr.accept(this, visArg);
             block.stmts.accept(this, visArg);
@@ -459,7 +520,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsTypName name, TypeResolver.Phase visArg) {
-        if (visArg == Phase.MapTypes) {
+        if (visArg == Phase.ResolveTyp) {
             AbsDecl decl = SemAn.declaredAt.get(name);
             if (decl instanceof AbsTypDecl) {
                 SemType type = SemAn.declaresType.get((AbsTypDecl) decl);
@@ -468,20 +529,34 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
             } else {
                 throw createError(name, "\"" + name.name + "\" is not a type (type declaration).");
             }
+        } else if (visArg == Phase.MapTypes){
+            return SemAn.isType.get(name);
         }
         return null;
     }
 
     @Override
     public SemType visit(AbsVarName name, TypeResolver.Phase visArg) {
-        SemType type = SemAn.isType.get(SemAn.declaredAt.get(name).type);
-        SemAn.ofType.put(name, type);
-        return type;
+        if (visArg == Phase.CheckTypes) {
+            AbsDecl decl = SemAn.declaredAt.get(name);
+            if (!(decl instanceof AbsVarDecl)) {
+                throw createError(name, "There is no variable or parameter with this name.");
+            }
+            SemType type = SemAn.isType.get(decl.type);
+            SemAn.ofType.put(name, type);
+            return type;
+        }
+        return null;
     }
 
     @Override
     public SemType visit(AbsFunName fun, TypeResolver.Phase visArg) {
-        if (visArg == Phase.CheckTypes) {
+        if (visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp || visArg == Phase.MapTypes){
+            for(AbsExpr expr: fun.args.args()){
+                expr.accept(this, visArg);
+            }
+        }
+        else if (visArg == Phase.CheckTypes) {
             AbsDecl decl = SemAn.declaredAt.get(fun);
             if (decl instanceof AbsFunDecl) {
                 if (((AbsFunDecl) decl).parDecls.parDecls().size() != fun.args.args().size()) {
@@ -497,8 +572,8 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
                     SemAn.ofType.put(fun.args.arg(i), argType);
                 }
                 SemType type = SemAn.isType.get(decl.type);
-                if (type instanceof SemBoolType || type instanceof SemIntType
-                        || type instanceof SemCharType || type instanceof SemVoidType || type instanceof SemPtrType) {
+                if (!(type.actualType() instanceof SemBoolType || type.actualType() instanceof SemIntType
+                        || type.actualType() instanceof SemCharType || type.actualType() instanceof SemVoidType || type.actualType() instanceof SemPtrType)) {
                     throw createError(fun, "Return type can only be of type VOID, INT, CHAR, BOOL or PTR");
                 }
                 SemAn.ofType.put(fun, type);
@@ -511,8 +586,19 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
     }
 
     @Override
+    public SemType visit(AbsExprStmt stmt, TypeResolver.Phase visArg){
+        if (visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp || visArg == Phase.MapTypes){
+            stmt.expr.accept(this, visArg);
+        } else if (visArg == Phase.CheckTypes){
+            stmt.expr.accept(this, visArg);
+            return new SemVoidType();
+        }
+        return null;
+    }
+
+    @Override
     public SemType visit(AbsAssignStmt stmt, TypeResolver.Phase visArg) {
-        if (visArg == Phase.AddNamedTypes || visArg == Phase.MapTypes) {
+        if (visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp || visArg == Phase.MapTypes) {
             stmt.dst.accept(this, visArg);
             stmt.src.accept(this, visArg);
         } else if (visArg == Phase.CheckTypes) {
@@ -521,9 +607,8 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
             if (dstType.matches(srcType)) {
                 if (dstType instanceof SemBoolType || dstType instanceof SemIntType
                         || dstType instanceof SemPtrType || dstType instanceof SemCharType) {
-                    SemType type = new SemVoidType();
                     //SemAn.ofType.put(stmt, type){
-                    return type;
+                    return new SemVoidType();
                 }
             } else {
                 throw createError(stmt, "Destination and source expressions should be of type INT, CHAR, BOOL or PTR");
@@ -536,7 +621,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsIfStmt ifStmt, TypeResolver.Phase visArg){
-        if (visArg == Phase.AddNamedTypes || visArg == Phase.MapTypes){
+        if (visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp || visArg == Phase.MapTypes){
             ifStmt.cond.accept(this, visArg);
             ifStmt.thenStmts.accept(this, visArg);
             ifStmt.elseStmts.accept(this, visArg);
@@ -551,7 +636,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
                     throw createError(ifStmt, "Some of the stmts are not of type VOID.");
                 }
             }
-            if (!(ifStmt.cond.accept(this, visArg) instanceof SemBoolType)){
+            if (!(ifStmt.cond.accept(this, visArg).actualType() instanceof SemBoolType)){
                 throw createError(ifStmt, "Condition should be of Boolean type.");
             }
             return new SemVoidType();
@@ -561,7 +646,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
 
     @Override
     public SemType visit(AbsWhileStmt whileStmt, TypeResolver.Phase visArg){
-        if(visArg == Phase.AddNamedTypes || visArg == Phase.MapTypes){
+        if(visArg == Phase.AddNamedTypes || visArg == Phase.ResolveTyp || visArg == Phase.MapTypes){
             whileStmt.cond.accept(this, visArg);
             whileStmt.stmts.accept(this, visArg);
         } else if (visArg == Phase.CheckTypes){
@@ -570,7 +655,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
                     throw createError(whileStmt, "Some of the stmts are not of type VOID.");
                 }
             }
-            if (!(whileStmt.cond.accept(this, visArg) instanceof SemBoolType)){
+            if (!(whileStmt.cond.accept(this, visArg).actualType() instanceof SemBoolType)){
                 throw createError(whileStmt, "Condition should be of Boolean type.");
             }
             return new SemVoidType();

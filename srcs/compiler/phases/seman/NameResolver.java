@@ -58,6 +58,9 @@ public class NameResolver extends AbsFullVisitor<Object, Object> {
 			} else if ((int) visArg==VAR_FUN_TYP_CHECK_PH){
 				AbsDecl declLocation = symbTable.fnd(typName.name);
 				SemAn.declaredAt.put(typName, declLocation);
+			} else if ((int) visArg==FUNCTION_PH){
+				AbsDecl declLocation = symbTable.fnd(typName.name);
+				SemAn.declaredAt.put(typName, declLocation);
 			}
 		} catch (SymbTable.CannotFndNameException e){
 			throw createSearchError(typName);
