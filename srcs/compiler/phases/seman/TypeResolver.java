@@ -46,7 +46,10 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
             SemNamedType named = SemAn.declaresType.get(decl);
             named.define(type);
         } else if (visArg == Phase.MapTypes) {
-            decl.type.accept(this, visArg);
+            SemType type = decl.type.accept(this, visArg);
+            if (type.isInfinite()){
+                throw createError(decl, "Declaration is infinite.");
+            }
         }
         return null;
     }
