@@ -281,6 +281,11 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
                     SemAn.ofType.put(expr, type);
                     return type;
                 }
+                case STR: {
+                    SemType type = new SemPtrType(new SemCharType());
+                    SemAn.ofType.put(expr, type);
+                    return type;
+                }
                 default: {
                     throw createError(expr, "Unrecognizable atom expression.");
                 }
@@ -547,6 +552,7 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
             block.expr.accept(this, visArg);
             block.stmts.accept(this, visArg);
         } else if (visArg == Phase.CheckTypes) {
+            block.decls.accept(this, visArg);
             block.stmts.accept(this, visArg);
             SemType type = block.expr.accept(this, visArg);
             SemAn.ofType.put(block, type);
