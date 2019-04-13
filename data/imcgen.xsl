@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
-<xsl:template match="frames">
+<xsl:template match="imcgen">
   <html>
     <style>
       table, tr, td {
@@ -60,6 +60,9 @@
 	    </tr>
 	    <xsl:apply-templates select="frame"/>
 	    <xsl:apply-templates select="access"/>
+	  </table>
+	  <table width="100%">
+	    <xsl:apply-templates select="imc"/>
 	  </table>
 	</td>
       </tr>
@@ -180,6 +183,27 @@
     </td>
   </tr>
 </xsl:template>
+
+<xsl:template match="imc">
+  <td>
+    <table width="100%">
+      <tr bgcolor="00BBFF">
+	<td colspan="1000">
+	  <nobr>
+	    <xsl:value-of select="@name"/>
+	    <xsl:if test="@value!=''">
+	      (<xsl:value-of select="@value"/>)
+	    </xsl:if>
+	  </nobr>
+	</td>
+      </tr>
+      <tr>
+	<xsl:apply-templates select="imc"/>
+      </tr>
+    </table>
+  </td>
+</xsl:template>
+
 
 <xsl:template match="location">
   <nobr>
