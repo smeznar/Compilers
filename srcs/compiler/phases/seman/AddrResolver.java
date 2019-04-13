@@ -43,6 +43,7 @@ public class AddrResolver extends AbsFullVisitor<Boolean, Object> {
     public Boolean visit(AbsBlockExpr expr, Object visArg) {
         expr.stmts.accept(this, visArg);
         expr.expr.accept(this, visArg);
+        expr.decls.accept(this, visArg);
         SemAn.isAddr.put(expr, false);
         return false;
     }

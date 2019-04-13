@@ -101,6 +101,7 @@ public class FrmEvaluator extends AbsFullVisitor<Object, FrmEvaluator.Context> {
 		SemType type = SemAn.isType.get(compDecl.type);
 		Frames.accesses.put(compDecl, new RelAccess(type.size(), context.compsSize, 0));
 		context.compsSize += type.size();
+		super.visit(compDecl, new RecContext());
 		return null;
 	}
 
