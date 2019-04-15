@@ -80,10 +80,10 @@ public class FrmEvaluator extends AbsFullVisitor<Object, FrmEvaluator.Context> {
 		FrmEvaluator.FunContext context = new FrmEvaluator.FunContext();
 		context.depth = ((FunContext) visArg).depth + 1;
 		super.visit(decl, context);
-		/*if (context.argsSize > 0){
-			context.argsSize += new SemPtrType(new SemVoidType()).size();
-		}*/
-		context.argsSize += new SemPtrType(new SemVoidType()).size();
+		//if (context.argsSize > 0){
+		//	context.argsSize += new SemPtrType(new SemVoidType()).size();
+		//}
+		//context.argsSize += new SemPtrType(new SemVoidType()).size();
 		String label;
 		if (context.depth == 1){
 			label = decl.name;
@@ -117,7 +117,7 @@ public class FrmEvaluator extends AbsFullVisitor<Object, FrmEvaluator.Context> {
 	@Override
 	public Object visit(AbsFunName funName, FrmEvaluator.Context visArg){
 		FunContext context = (FunContext) visArg;
-		int size = (Integer) funName.args.accept(this, visArg);
+		long size = (Long) funName.args.accept(this, visArg) + new SemPtrType(new SemVoidType()).size();
 		if (size > context.argsSize){
 			context.argsSize = size;
 		}
@@ -126,10 +126,20 @@ public class FrmEvaluator extends AbsFullVisitor<Object, FrmEvaluator.Context> {
 
 	@Override
 	public Object visit(AbsArgs args, Context visArgs){
-		int size = 0;
+		long size = 0;
 		for (AbsExpr expr : args.args()){
+			expr.accept(this, visArgs);
 			size += SemAn.ofType.get(expr).size();
 		}
 		return size;
+	}
+
+	@Override
+	public Object visit(AbsAtomExpr atom, Context visArgs){
+		if (atom.type.equals(AbsAtomExpr.Type.STR)){
+			// TODO: take care of length
+			Frames.strings.put(atom, new AbsAccess(SemAn.ofType.get(atom).size(),new Label(), atom.expr));
+		}
+		return null;
 	}
 }
