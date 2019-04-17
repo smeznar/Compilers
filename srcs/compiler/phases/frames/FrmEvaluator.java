@@ -48,8 +48,6 @@ public class FrmEvaluator extends AbsFullVisitor<Object, FrmEvaluator.Context> {
 		public long compsSize = 0;
 	}
 
-	int numOfLocalfunctions = 0;
-
 	@Override
 	public Object visit(AbsSource source, FrmEvaluator.Context visArg){
 		FunContext context = new FunContext();
@@ -84,14 +82,13 @@ public class FrmEvaluator extends AbsFullVisitor<Object, FrmEvaluator.Context> {
 		//	context.argsSize += new SemPtrType(new SemVoidType()).size();
 		//}
 		//context.argsSize += new SemPtrType(new SemVoidType()).size();
-		String label;
+		Label label;
 		if (context.depth == 1){
-			label = decl.name;
+			label = new Label(decl.name);
 		} else {
-			label = "L" + numOfLocalfunctions;
-			numOfLocalfunctions++;
+			label = new Label();
 		}
-		Frames.frames.put(decl, new Frame(new Label(label),context.depth, context.locsSize, context.argsSize));
+		Frames.frames.put(decl, new Frame(label,context.depth, context.locsSize, context.argsSize));
 		return null;
 	}
 
