@@ -118,7 +118,9 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
         expr.record.accept(this, visArg);
         ImcMEM rec = (ImcMEM) ImcGen.exprImCode.get(expr.record);
         ImcExpr recAddr = rec.addr;
-        RelAccess access = (RelAccess) Frames.accesses.get((AbsVarDecl) SemAn.declaredAt.get(expr.comp));
+        //RelAccess access = (RelAccess) Frames.accesses.get((AbsVarDecl) SemAn.declaredAt.get(expr.comp));
+        // TODO: Fix
+        RelAccess access = new RelAccess(8, 0, 0);
         ImcBINOP compAddr = new ImcBINOP(ImcBINOP.Oper.ADD, recAddr, new ImcCONST(access.offset));
         ImcGen.exprImCode.put(expr, new ImcMEM(compAddr));
         return compAddr;
@@ -224,11 +226,21 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
     @Override
     public Object visit(AbsBlockExpr blockExpr, Stack<Frame> visArg){
         blockExpr.decls.accept(this, visArg);
-        blockExpr.stmts.accept(this, visArg);
+        ImcStmt stmts = (ImcStmt) blockExpr.stmts.accept(this, visArg);
         blockExpr.expr.accept(this, visArg);
         ImcExpr expr = ImcGen.exprImCode.get(blockExpr.expr);
-        ImcGen.exprImCode.put(blockExpr, expr);
+        ImcGen.exprImCode.put(blockExpr, new ImcSEXPR(stmts, expr));
         return null;
+    }
+
+    @Override
+    public Object visit(AbsStmts stmts, Stack<Frame> visArg){
+        Vector<ImcStmt> imcStmts = new Vector<>();
+        for (AbsStmt stmt : stmts.stmts()){
+            stmt.accept(this, visArg);
+            imcStmts.add(ImcGen.stmtImCode.get(stmt));
+        }
+        return imcStmts;
     }
 
     @Override
@@ -258,6 +270,56 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
         ImcExpr dstExpr = ImcGen.exprImCode.get(assignStmt.dst);
         ImcExpr srcExpr = ImcGen.exprImCode.get(assignStmt.src);
         ImcGen.stmtImCode.put(assignStmt, new ImcMOVE(dstExpr, srcExpr));
+        return null;
+    }
+
+    @Override
+    public Object visit(AbsIfStmt ifStmt, Stack<Frame> visArg){
+        Vector<ImcStmt> imcIfVector = new Vector<>();
+        Label labelTrue = new Label();
+        Label labelEnd = new Label();
+
+        ifStmt.cond.accept(this, visArg);
+        ImcExpr condition = ImcGen.exprImCode.get(ifStmt.cond);
+        ImcSTMTS thenStmts = (ImcSTMTS) ifStmt.thenStmts.accept(this, visArg);
+
+        if (ifStmt.elseStmts.numStmts() == 0) {
+            imcIfVector.add(new ImcCJUMP(condition, labelTrue, labelEnd));
+            imcIfVector.add(new ImcLABEL(labelTrue));
+            imcIfVector.add(thenStmts);
+            imcIfVector.add(new ImcLABEL(labelEnd));
+        } else {
+            Label labelFalse = new Label();
+            ImcSTMTS elseStmts = (ImcSTMTS) ifStmt.elseStmts.accept(this, visArg);
+
+            imcIfVector.add(new ImcCJUMP(condition, labelTrue, labelFalse));
+            imcIfVector.add(new ImcLABEL(labelTrue));
+            imcIfVector.add(thenStmts);
+            imcIfVector.add(new ImcJUMP(labelEnd));
+            imcIfVector.add(new ImcLABEL(labelFalse));
+            imcIfVector.add(elseStmts);
+            imcIfVector.add(new ImcLABEL(labelEnd));
+        }
+        ImcGen.stmtImCode.put(ifStmt, new ImcSTMTS(imcIfVector));
+        return null;
+    }
+
+    @Override
+    public Object visit(AbsWhileStmt whileStmt, Stack<Frame> visArg){
+        Vector<ImcStmt> imcWhileVector = new Vector<>();
+        Label labelStart = new Label();
+        Label labelTrue = new Label();
+        Label labelEnd = new Label();
+        whileStmt.cond.accept(this, visArg);
+        ImcExpr condition = ImcGen.exprImCode.get(whileStmt.cond);
+        ImcSTMTS stmts = (ImcSTMTS) whileStmt.stmts.accept(this, visArg);
+
+        imcWhileVector.add(new ImcLABEL(labelStart));
+        imcWhileVector.add(new ImcCJUMP(condition, labelTrue, labelEnd));
+        imcWhileVector.add(new ImcLABEL(labelTrue));
+        imcWhileVector.add(stmts);
+        imcWhileVector.add(new ImcLABEL(labelEnd));
+        ImcGen.stmtImCode.put(whileStmt, new ImcSTMTS(imcWhileVector));
         return null;
     }
 }

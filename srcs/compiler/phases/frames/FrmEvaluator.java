@@ -134,8 +134,8 @@ public class FrmEvaluator extends AbsFullVisitor<Object, FrmEvaluator.Context> {
 	@Override
 	public Object visit(AbsAtomExpr atom, Context visArgs){
 		if (atom.type.equals(AbsAtomExpr.Type.STR)){
-			// TODO: take care of length
-			Frames.strings.put(atom, new AbsAccess(SemAn.ofType.get(atom).size(),new Label(), atom.expr));
+			// TODO: check length
+			Frames.strings.put(atom, new AbsAccess(8*(atom.expr.length()),new Label(), atom.expr));
 		}
 		return null;
 	}
