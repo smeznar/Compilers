@@ -104,7 +104,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
         arrExpr.array.accept(this, visArg);
         ImcMEM exprLeft = (ImcMEM) ImcGen.exprImCode.get(arrExpr.array);
         ImcExpr addr1 = exprLeft.addr;
-        arrExpr.array.accept(this, visArg);
+        arrExpr.index.accept(this, visArg);
         ImcCONST index = (ImcCONST) ImcGen.exprImCode.get(arrExpr.index);
         ImcCONST arrSize = new ImcCONST(SemAn.ofType.get(arrExpr).size());
         ImcBINOP indexVal = new ImcBINOP(ImcBINOP.Oper.MUL, index, arrSize);
@@ -240,7 +240,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
             stmt.accept(this, visArg);
             imcStmts.add(ImcGen.stmtImCode.get(stmt));
         }
-        return imcStmts;
+        return new ImcSTMTS(imcStmts);
     }
 
     @Override
