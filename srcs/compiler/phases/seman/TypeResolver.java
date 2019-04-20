@@ -26,7 +26,8 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
     /**
      * Symbol tables of individual record types.
      */
-    private final HashMap<SemRecType, SymbTable> symbTables = new HashMap<SemRecType, SymbTable>();
+    //private final HashMap<SemRecType, SymbTable> symbTables = new HashMap<SemRecType, SymbTable>();
+    public static final HashMap<SemRecType, SymbTable> symbTables = new HashMap<SemRecType, SymbTable>();
 
     @Override
     public SemType visit(AbsSource source, TypeResolver.Phase visArg) {

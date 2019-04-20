@@ -9,9 +9,12 @@ import compiler.data.abstree.visitor.*;
 import compiler.data.imcode.*;
 import compiler.data.layout.*;
 import compiler.data.type.SemCharType;
+import compiler.data.type.SemRecType;
 import compiler.data.type.SemType;
 import compiler.phases.frames.*;
 import compiler.phases.seman.SemAn;
+import compiler.phases.seman.SymbTable;
+import compiler.phases.seman.TypeResolver;
 
 /**
  * Intermediate code generator.
@@ -105,7 +108,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
         ImcMEM exprLeft = (ImcMEM) ImcGen.exprImCode.get(arrExpr.array);
         ImcExpr addr1 = exprLeft.addr;
         arrExpr.index.accept(this, visArg);
-        ImcCONST index = (ImcCONST) ImcGen.exprImCode.get(arrExpr.index);
+        ImcExpr index = ImcGen.exprImCode.get(arrExpr.index);
         ImcCONST arrSize = new ImcCONST(SemAn.ofType.get(arrExpr).size());
         ImcBINOP indexVal = new ImcBINOP(ImcBINOP.Oper.MUL, index, arrSize);
         ImcBINOP arrAddr = new ImcBINOP(ImcBINOP.Oper.ADD, addr1, indexVal);
@@ -120,10 +123,22 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
         ImcExpr recAddr = rec.addr;
         //RelAccess access = (RelAccess) Frames.accesses.get((AbsVarDecl) SemAn.declaredAt.get(expr.comp));
         // TODO: Fix
-        RelAccess access = new RelAccess(8, 0, 0);
+        RelAccess access = getComponentAccess(expr.record, expr.comp);
         ImcBINOP compAddr = new ImcBINOP(ImcBINOP.Oper.ADD, recAddr, new ImcCONST(access.offset));
         ImcGen.exprImCode.put(expr, new ImcMEM(compAddr));
         return compAddr;
+    }
+
+    private RelAccess getComponentAccess(AbsExpr record, AbsVarName comp){
+        SemRecType type = (SemRecType) SemAn.ofType.get(record).actualType();
+        SymbTable table = TypeResolver.symbTables.get(type);
+        AbsVarDecl decl = null;
+        try {
+            decl = (AbsVarDecl) table.fnd(comp.name);
+        } catch (SymbTable.CannotFndNameException e) {
+            e.printStackTrace();
+        }
+        return (RelAccess) Frames.accesses.get(decl);
     }
 
     @Override
@@ -218,7 +233,9 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
             expr.accept(this, visArg);
             args.add(ImcGen.exprImCode.get(expr));
         }
-        Label label = Frames.frames.get((AbsFunDecl) SemAn.declaredAt.get(funName)).label;
+        AbsFunDecl funDecl = (AbsFunDecl) SemAn.declaredAt.get(funName);
+        Frame frame = Frames.frames.get(funDecl);
+        Label label = frame.label;
         ImcGen.exprImCode.put(funName, new ImcCALL(label, args));
         return null;
     }

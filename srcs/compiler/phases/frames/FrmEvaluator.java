@@ -88,9 +88,22 @@ public class FrmEvaluator extends AbsFullVisitor<Object, FrmEvaluator.Context> {
 		} else {
 			label = new Label();
 		}
-		Frames.frames.put(decl, new Frame(label,context.depth, context.locsSize, context.argsSize));
+		Frames.frames.put(decl, new Frame(label, context.depth, context.locsSize, context.argsSize));
 		return null;
 	}
+
+    @Override
+    public Object visit(AbsFunDecl decl, FrmEvaluator.Context visArg){
+        FunContext context = (FunContext) visArg;
+        Label label;
+        if (context.depth == 1){
+            label = new Label(decl.name);
+        } else {
+            label = new Label();
+        }
+        Frames.frames.put(decl, new Frame(label, ((FunContext) visArg).depth + 1, 0, 0));
+        return null;
+    }
 
 	@Override
 	public Object visit(AbsCompDecl compDecl, Context visArg){
@@ -134,8 +147,8 @@ public class FrmEvaluator extends AbsFullVisitor<Object, FrmEvaluator.Context> {
 	@Override
 	public Object visit(AbsAtomExpr atom, Context visArgs){
 		if (atom.type.equals(AbsAtomExpr.Type.STR)){
-			// TODO: check length
-			Frames.strings.put(atom, new AbsAccess(8*(atom.expr.length()),new Label(), atom.expr));
+			// length - 1, because the string has length - 2 characters (+ two ") plus an escape character /0
+			Frames.strings.put(atom, new AbsAccess(8*(atom.expr.length()-1),new Label(), atom.expr));
 		}
 		return null;
 	}
