@@ -1,1 +1,1 @@
-var i:int;
+fun a(): ptr int = $5;

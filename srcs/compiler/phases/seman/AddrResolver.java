@@ -87,6 +87,7 @@ public class AddrResolver extends AbsFullVisitor<Boolean, Object> {
 
     @Override
     public Boolean visit(AbsUnExpr expr, Object visArg) {
+        expr.subExpr.accept(this, visArg);
         if (expr.oper == AbsUnExpr.Oper.DATA
                 && SemAn.ofType.get(expr.subExpr).actualType() instanceof SemPtrType) {
             SemAn.isAddr.put(expr, true);

@@ -4,6 +4,8 @@
 package compiler.phases.imcgen;
 
 import java.util.*;
+
+import compiler.common.report.Report;
 import compiler.data.abstree.*;
 import compiler.data.abstree.visitor.*;
 import compiler.data.imcode.*;
@@ -33,8 +35,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
 
     @Override
     public Object visit(AbsFunDef fun, Stack<Frame> visArg){
-        Frame frame = Frames.frames.get(fun);
-        visArg.push(frame);
+        visArg.push(Frames.frames.get(fun));
         super.visit(fun, visArg);
         visArg.pop();
         return null;
@@ -46,17 +47,12 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
         switch (atomExpr.type){
             case PTR:
             case VOID: {
-                ImcExpr atom = new ImcCONST(0);
-                ImcGen.exprImCode.put(atomExpr, atom);
+                ImcGen.exprImCode.put(atomExpr, new ImcCONST(0));
                 return null;
             }
             case BOOL: {
                 ImcExpr atom;
-                if (atomExpr.expr.equals("false")){
-                    atom = new ImcCONST(0);
-                } else {
-                    atom = new ImcCONST(1);
-                }
+                atom = atomExpr.expr.equals("false") ? new ImcCONST(0) : new ImcCONST(1);
                 ImcGen.exprImCode.put(atomExpr, atom);
                 return null;
             }
@@ -67,15 +63,12 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
             }
             case CHAR: {
                 char character = atomExpr.expr.charAt(1);
-                ImcExpr atom = new ImcCONST((long)character);
-                ImcGen.exprImCode.put(atomExpr, atom);
+                ImcGen.exprImCode.put(atomExpr, new ImcCONST((long)character));
                 return null;
             }
             case STR: {
-                // TODO: fix
                 AbsAccess access = Frames.strings.get(atomExpr);
-                ImcExpr name = new ImcNAME(access.label);
-                ImcGen.exprImCode.put(atomExpr, new ImcMEM(name));
+                ImcGen.exprImCode.put(atomExpr, new ImcMEM(new ImcNAME(access.label)));
                 return null;
             }
         }
@@ -103,11 +96,13 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
 
     @Override
     public Object visit(AbsArrExpr arrExpr, Stack<Frame> visArg){
-        // Maybe check if it is an address
         arrExpr.array.accept(this, visArg);
+        arrExpr.index.accept(this, visArg);
+        if (!SemAn.isAddr.get(arrExpr.array)){
+            throw new Report.Error(arrExpr, "[ImcGen] Array expression should have an address on the left side.");
+        }
         ImcMEM exprLeft = (ImcMEM) ImcGen.exprImCode.get(arrExpr.array);
         ImcExpr addr1 = exprLeft.addr;
-        arrExpr.index.accept(this, visArg);
         ImcExpr index = ImcGen.exprImCode.get(arrExpr.index);
         ImcCONST arrSize = new ImcCONST(SemAn.ofType.get(arrExpr).size());
         ImcBINOP indexVal = new ImcBINOP(ImcBINOP.Oper.MUL, index, arrSize);
@@ -119,10 +114,12 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
     @Override
     public Object visit(AbsRecExpr expr, Stack<Frame> visArg){
         expr.record.accept(this, visArg);
+        if (!SemAn.isAddr.get(expr.record)){
+            throw new Report.Error(expr, "[ImcGen] Record should have an address on the left side.");
+        }
         ImcMEM rec = (ImcMEM) ImcGen.exprImCode.get(expr.record);
         ImcExpr recAddr = rec.addr;
-        //RelAccess access = (RelAccess) Frames.accesses.get((AbsVarDecl) SemAn.declaredAt.get(expr.comp));
-        // TODO: Fix
+        // Ask if it is ok
         RelAccess access = getComponentAccess(expr.record, expr.comp);
         ImcBINOP compAddr = new ImcBINOP(ImcBINOP.Oper.ADD, recAddr, new ImcCONST(access.offset));
         ImcGen.exprImCode.put(expr, new ImcMEM(compAddr));
@@ -130,48 +127,51 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
     }
 
     private RelAccess getComponentAccess(AbsExpr record, AbsVarName comp){
-        SemRecType type = (SemRecType) SemAn.ofType.get(record).actualType();
-        SymbTable table = TypeResolver.symbTables.get(type);
         AbsVarDecl decl = null;
         try {
+            SemRecType type = (SemRecType) SemAn.ofType.get(record).actualType();
+            SymbTable table = TypeResolver.symbTables.get(type);
             decl = (AbsVarDecl) table.fnd(comp.name);
         } catch (SymbTable.CannotFndNameException e) {
-            e.printStackTrace();
+            throw new Report.Error(comp, "Cannot find name of component.");
+        } catch (Exception e){
+            throw new Report.Error(record, "Cannot find record or its components.");
         }
         return (RelAccess) Frames.accesses.get(decl);
     }
 
     @Override
     public Object visit(AbsUnExpr expr, Stack<Frame> visArg){
+        expr.subExpr.accept(this, visArg);
         switch (expr.oper){
             case ADD: {
-                expr.subExpr.accept(this, visArg);
                 ImcExpr subExpr = ImcGen.exprImCode.get(expr.subExpr);
                 ImcGen.exprImCode.put(expr, subExpr);
                 return null;
             }
             case SUB: {
-                expr.subExpr.accept(this, visArg);
                 ImcExpr expr1 = ImcGen.exprImCode.get(expr.subExpr);
                 ImcGen.exprImCode.put(expr, new ImcUNOP(ImcUNOP.Oper.NEG, expr1));
                 return null;
             }
             case NOT: {
-                expr.subExpr.accept(this, visArg);
                 ImcExpr expr1 = ImcGen.exprImCode.get(expr.subExpr);
                 ImcGen.exprImCode.put(expr, new ImcUNOP(ImcUNOP.Oper.NOT, expr1));
                 return null;
             }
             case DATA: {
-                expr.subExpr.accept(this, visArg);
                 ImcExpr subExpr = ImcGen.exprImCode.get(expr.subExpr);
                 ImcGen.exprImCode.put(expr, new ImcMEM(subExpr));
                 return null;
             }
             case ADDR: {
-                expr.subExpr.accept(this, visArg);
-                ImcMEM subExpr = (ImcMEM) ImcGen.exprImCode.get(expr.subExpr);
-                ImcGen.exprImCode.put(expr, subExpr.addr);
+                if (SemAn.isAddr.get(expr.subExpr)){
+                    ImcMEM subExpr = (ImcMEM) ImcGen.exprImCode.get(expr.subExpr);
+                    ImcGen.exprImCode.put(expr, subExpr.addr);
+                    return null;
+                } else {
+                    throw new Report.Error(expr, "[ImcGen] The expression does not have an address.");
+                }
             }
         }
         return null;
@@ -188,6 +188,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
             case ADD: oper = ImcBINOP.Oper.ADD; break;
             case SUB: oper = ImcBINOP.Oper.SUB; break;
             case MUL: oper = ImcBINOP.Oper.MUL; break;
+            case DIV: oper = ImcBINOP.Oper.DIV; break;
             case MOD: oper = ImcBINOP.Oper.MOD; break;
             case EQU: oper = ImcBINOP.Oper.EQU; break;
             case NEQ: oper = ImcBINOP.Oper.NEQ; break;
@@ -198,11 +199,10 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
             case IOR: oper = ImcBINOP.Oper.IOR; break;
             case XOR: oper = ImcBINOP.Oper.XOR; break;
             case AND: oper = ImcBINOP.Oper.AND; break;
-            case DIV: oper = ImcBINOP.Oper.DIV; break;
         }
         ImcBINOP binop = new ImcBINOP(oper, expr1, expr2);
         ImcGen.exprImCode.put(expr, binop);
-        return binop;
+        return null;
     }
 
     @Override
@@ -217,12 +217,10 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
 
     @Override
     public Object visit(AbsDelExpr delExpr, Stack<Frame> visArg){
-        delExpr.expr.accept(this, visArg);
-        ImcExpr expr = ImcGen.exprImCode.get(delExpr.expr);
         Vector<ImcExpr> args = new Vector<>();
-        args.add(expr);
-        ImcCALL call = new ImcCALL(new Label("del"), args);
-        ImcGen.exprImCode.put(delExpr, call);
+        delExpr.expr.accept(this, visArg);
+        args.add(ImcGen.exprImCode.get(delExpr.expr));
+        ImcGen.exprImCode.put(delExpr, new ImcCALL(new Label("del"), args));
         return null;
     }
 
@@ -235,8 +233,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
         }
         AbsFunDecl funDecl = (AbsFunDecl) SemAn.declaredAt.get(funName);
         Frame frame = Frames.frames.get(funDecl);
-        Label label = frame.label;
-        ImcGen.exprImCode.put(funName, new ImcCALL(label, args));
+        ImcGen.exprImCode.put(funName, new ImcCALL(frame.label, args));
         return null;
     }
 
@@ -262,7 +259,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
 
     @Override
     public Object visit(AbsCastExpr castExpr, Stack<Frame> visArg){
-        SemType type = SemAn.isType.get(castExpr.type);
+        SemType type = SemAn.isType.get(castExpr.type).actualType();
         castExpr.expr.accept(this, visArg);
         ImcExpr expr = ImcGen.exprImCode.get(castExpr.expr);
         if (type instanceof SemCharType){
@@ -282,6 +279,9 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
 
     @Override
     public Object visit(AbsAssignStmt assignStmt, Stack<Frame> visArg){
+        if (!SemAn.isAddr.get(assignStmt.dst)){
+            throw new Report.Error(assignStmt, "[ImcGen] Destination expression should be an address.");
+        }
         assignStmt.dst.accept(this, visArg);
         assignStmt.src.accept(this, visArg);
         ImcExpr dstExpr = ImcGen.exprImCode.get(assignStmt.dst);
@@ -335,6 +335,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
         imcWhileVector.add(new ImcCJUMP(condition, labelTrue, labelEnd));
         imcWhileVector.add(new ImcLABEL(labelTrue));
         imcWhileVector.add(stmts);
+        imcWhileVector.add(new ImcJUMP(labelStart));
         imcWhileVector.add(new ImcLABEL(labelEnd));
         ImcGen.stmtImCode.put(whileStmt, new ImcSTMTS(imcWhileVector));
         return null;
