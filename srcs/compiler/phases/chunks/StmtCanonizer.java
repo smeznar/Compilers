@@ -24,4 +24,46 @@ public class StmtCanonizer implements ImcVisitor<Vector<ImcStmt>, Object> {
     public void setExprCanonizer(ExprCanonizer exprCanonizer) {
         this.exprCanonizer = exprCanonizer;
     }
+
+    @Override
+    public Vector<ImcStmt> visit(ImcCJUMP cjump, Object visArg){
+        return null;
+    }
+
+    @Override
+    public Vector<ImcStmt> visit(ImcJUMP jump, Object visArg){
+        return null;
+    }
+
+    @Override
+    public Vector<ImcStmt> visit(ImcLABEL label, Object visArg){
+        return null;
+    }
+
+    @Override
+    public Vector<ImcStmt> visit(ImcMOVE move, Object visArg){
+        Vector<ImcStmt> stmts = new Vector<>();
+//        ImcExpr expr1 = move.dst.accept(exprCanonizer, stmts);
+//        ImcTEMP temp1 = new ImcTEMP(new Temp());
+//        ImcExpr expr2 = move.src.accept(exprCanonizer, stmts);
+//        ImcTEMP temp2 = new ImcTEMP(new Temp());
+//        stmts.add(new ImcMOVE());
+        return stmts;
+    }
+
+    @Override
+    public Vector<ImcStmt> visit(ImcESTMT estmt, Object visArg){
+        Vector<ImcStmt> stmts = new Vector<>();
+        estmt.expr.accept(exprCanonizer, stmts);
+        return stmts;
+    }
+
+    @Override
+    public Vector<ImcStmt> visit(ImcSTMTS stmts, Object visArg){
+        Vector<ImcStmt> allStmts = new Vector<>();
+        for (ImcStmt stmt : stmts.stmts()){
+            allStmts.addAll(stmt.accept(this, visArg));
+        }
+        return allStmts;
+    }
 }
