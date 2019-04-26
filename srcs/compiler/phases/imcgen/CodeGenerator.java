@@ -227,6 +227,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
     @Override
     public Object visit(AbsFunName funName, Stack<Frame> visArg){
         Vector<ImcExpr> args = new Vector<>();
+        args.add(new ImcMEM(new ImcTEMP(visArg.peek().RV)));
         for (AbsExpr expr : funName.args.args()){
             expr.accept(this, visArg);
             args.add(ImcGen.exprImCode.get(expr));

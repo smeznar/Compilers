@@ -57,14 +57,28 @@ public class SemNamedType extends SemType {
 	}
 
 	@Override
-	protected boolean isInfinite(HashSet<SemNamedType> namedTypes) {
-		if (namedTypes.contains(this))
-			return true;
-		else {
-			namedTypes.add(this);
-			return type.isInfinite(namedTypes);
+	protected boolean isInfinite(HashMap<SemNamedType, SemType.Infinite> namedTypes) {
+		if (namedTypes.get(this) == null) {
+			namedTypes.put(this, SemType.Infinite.CHECKING);
+			boolean typeIsInfinite = type.isInfinite(namedTypes);
+			if (typeIsInfinite)
+				namedTypes.put(this, SemType.Infinite.TRUE);
+			else
+				namedTypes.put(this, SemType.Infinite.FALSE);
+			return typeIsInfinite;
+		} else {
+			switch (namedTypes.get(this)) {
+			case CHECKING:
+				namedTypes.put(this, SemType.Infinite.TRUE);
+				return true;
+			case TRUE:
+				return true;
+			case FALSE:
+				return false;
+			default:
+				throw new Report.InternalError();
+			}
 		}
-
 	}
 
 	@Override

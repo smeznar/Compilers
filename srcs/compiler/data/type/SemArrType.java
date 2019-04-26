@@ -58,9 +58,9 @@ public class SemArrType extends SemType {
 
 		return true;
 	}
-	
+
 	@Override
-	protected boolean isInfinite(HashSet<SemNamedType> namedTypes) {
+	protected boolean isInfinite(HashMap<SemNamedType, SemType.Infinite> namedTypes) {
 		return elemType.isInfinite(namedTypes);
 	}
 

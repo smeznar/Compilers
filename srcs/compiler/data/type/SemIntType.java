@@ -31,7 +31,7 @@ public class SemIntType extends SemType implements AssignType, BinArithOperType,
 	}
 
 	@Override
-	protected boolean isInfinite(HashSet<SemNamedType> namedTypes) {
+	protected boolean isInfinite(HashMap<SemNamedType, SemType.Infinite> namedTypes) {
 		return false;
 	}
 

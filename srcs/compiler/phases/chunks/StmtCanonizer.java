@@ -14,6 +14,14 @@ import compiler.data.imcode.visitor.*;
  */
 public class StmtCanonizer implements ImcVisitor<Vector<ImcStmt>, Object> {
 
-    // TODO
-    
+    private ExprCanonizer exprCanonizer;
+    private ChunkGenerator chunkGenerator;
+
+    public StmtCanonizer(ChunkGenerator chunkGenerator){
+        this.chunkGenerator = chunkGenerator;
+    }
+
+    public void setExprCanonizer(ExprCanonizer exprCanonizer) {
+        this.exprCanonizer = exprCanonizer;
+    }
 }

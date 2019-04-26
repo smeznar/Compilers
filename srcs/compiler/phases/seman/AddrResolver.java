@@ -17,6 +17,7 @@ public class AddrResolver extends AbsFullVisitor<Boolean, Object> {
 
     @Override
     public Boolean visit(AbsArrExpr expr, Object visArg) {
+        expr.index.accept(this, visArg);
         if (expr.array.accept(this, visArg)) {
             SemAn.isAddr.put(expr, true);
             return true;

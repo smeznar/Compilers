@@ -88,10 +88,12 @@ public class SemRecType extends SemType {
 	}
 
 	@Override
-	protected boolean isInfinite(HashSet<SemNamedType> namedTypes) {
+	protected boolean isInfinite(HashMap<SemNamedType, SemType.Infinite> namedTypes) {
 		boolean isInfinite = false;
-		for (SemType compType : compTypes)
-			isInfinite |= compType.isInfinite(namedTypes);
+		for (SemType compType : compTypes) {
+			boolean compIsInfinite = compType.isInfinite(namedTypes);
+			isInfinite |= compIsInfinite;
+		}
 		return isInfinite;
 	}
 

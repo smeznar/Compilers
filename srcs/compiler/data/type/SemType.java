@@ -99,14 +99,17 @@ public abstract class SemType implements Loggable {
 
 	}
 
+	protected enum Infinite {
+		CHECKING, TRUE, FALSE
+	};
+
 	/**
-	 * Checks whether a type is infinite (wrapper for
-	 * {@link isInfinite(HashSet)}.
+	 * Checks whether a type is infinite (wrapper for {@link isInfinite(HashSet)}.
 	 * 
 	 * @return {@code true} if the type is infinite, {@code false} otherwise.
 	 */
 	public final boolean isInfinite() {
-		return isInfinite(new HashSet<SemNamedType>());
+		return isInfinite(new HashMap<SemNamedType, Infinite>());
 	}
 
 	/**
@@ -115,6 +118,6 @@ public abstract class SemType implements Loggable {
 	 * @param namedTypes Named types already encountered during the traversal.
 	 * @return {@code true} if the type is infinite, {@code false} otherwise.
 	 */
-	protected abstract boolean isInfinite(HashSet<SemNamedType> namedTypes);
+	protected abstract boolean isInfinite(HashMap<SemNamedType, Infinite> namedTypes);
 
 }

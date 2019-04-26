@@ -5,7 +5,6 @@ package compiler.data.type;
 
 import java.util.*;
 import compiler.common.logger.*;
-import compiler.common.report.*;
 import compiler.data.type.property.*;
 
 /**
@@ -17,7 +16,7 @@ public class SemVoidType extends SemType implements FunResultType {
 
 	@Override
 	public long size() {
-		throw new Report.InternalError();
+		return 0;
 	}
 
 	@Override
@@ -31,7 +30,7 @@ public class SemVoidType extends SemType implements FunResultType {
 	}
 
 	@Override
-	protected boolean isInfinite(HashSet<SemNamedType> namedTypes) {
+	protected boolean isInfinite(HashMap<SemNamedType, SemType.Infinite> namedTypes) {
 		return false;
 	}
 
