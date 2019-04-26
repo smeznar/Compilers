@@ -22,8 +22,8 @@ public class ChunkGenerator extends AbsFullVisitor<Object, Object> {
     private StmtCanonizer stmtCanonizer;
 
     public ChunkGenerator(){
-        exprCanonizer = new ExprCanonizer(this);
-        stmtCanonizer = new StmtCanonizer(this);
+        exprCanonizer = new ExprCanonizer();
+        stmtCanonizer = new StmtCanonizer();
         exprCanonizer.setStmtCanonizer(stmtCanonizer);
         stmtCanonizer.setExprCanonizer(exprCanonizer);
     }
@@ -35,8 +35,8 @@ public class ChunkGenerator extends AbsFullVisitor<Object, Object> {
         stmts.add(new ImcLABEL(startLabel));
         ImcExpr expr = ImcGen.exprImCode.get(funDef.value);
         expr.accept(exprCanonizer, stmts);
-
-        return null;
+        Frame frame = Frames.frames.get(funDef);
+        return super.visit(funDef, visArg);
     }
 
 }

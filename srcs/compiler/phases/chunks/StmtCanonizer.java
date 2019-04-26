@@ -15,11 +15,6 @@ import compiler.data.imcode.visitor.*;
 public class StmtCanonizer implements ImcVisitor<Vector<ImcStmt>, Object> {
 
     private ExprCanonizer exprCanonizer;
-    private ChunkGenerator chunkGenerator;
-
-    public StmtCanonizer(ChunkGenerator chunkGenerator){
-        this.chunkGenerator = chunkGenerator;
-    }
 
     public void setExprCanonizer(ExprCanonizer exprCanonizer) {
         this.exprCanonizer = exprCanonizer;
@@ -32,22 +27,24 @@ public class StmtCanonizer implements ImcVisitor<Vector<ImcStmt>, Object> {
 
     @Override
     public Vector<ImcStmt> visit(ImcJUMP jump, Object visArg){
-        return null;
+        Vector<ImcStmt> stmts = new Vector<>();
+        stmts.add(jump);
+        return stmts;
     }
 
     @Override
     public Vector<ImcStmt> visit(ImcLABEL label, Object visArg){
-        return null;
+        Vector<ImcStmt> stmts = new Vector<>();
+        stmts.add(label);
+        return stmts;
     }
 
     @Override
     public Vector<ImcStmt> visit(ImcMOVE move, Object visArg){
         Vector<ImcStmt> stmts = new Vector<>();
-//        ImcExpr expr1 = move.dst.accept(exprCanonizer, stmts);
-//        ImcTEMP temp1 = new ImcTEMP(new Temp());
-//        ImcExpr expr2 = move.src.accept(exprCanonizer, stmts);
-//        ImcTEMP temp2 = new ImcTEMP(new Temp());
-//        stmts.add(new ImcMOVE());
+        move.dst.accept(exprCanonizer, stmts);
+        move.src.accept(exprCanonizer, stmts);
+        stmts.add(move);
         return stmts;
     }
 
