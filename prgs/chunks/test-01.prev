@@ -1,3 +1,4 @@
 var i:int;
+fun putInt(n:int):void;
 fun f1():ptr char = "one";
-fun f2():int = 1;
+fun f2():void = putInt(1);

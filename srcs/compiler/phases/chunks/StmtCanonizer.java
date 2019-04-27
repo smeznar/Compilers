@@ -22,7 +22,16 @@ public class StmtCanonizer implements ImcVisitor<Vector<ImcStmt>, Object> {
 
     @Override
     public Vector<ImcStmt> visit(ImcCJUMP cjump, Object visArg){
-        return null;
+        Vector<ImcStmt> stmts = new Vector<>();
+        ImcExpr cond = cjump.cond.accept(exprCanonizer, stmts);
+        ImcTEMP temp = new ImcTEMP(new Temp());
+        stmts.add(new ImcMOVE(temp, cond));
+        //stmts.add(new ImcCJUMP(temp, cjump.posLabel, cjump.negLabel));
+        Label falseLabel = new Label();
+        stmts.add(new ImcCJUMP(temp, cjump.posLabel, falseLabel));
+        stmts.add(new ImcLABEL(falseLabel));
+        stmts.add(new ImcJUMP(cjump.negLabel));
+        return stmts;
     }
 
     @Override
@@ -33,25 +42,19 @@ public class StmtCanonizer implements ImcVisitor<Vector<ImcStmt>, Object> {
     }
 
     @Override
-    public Vector<ImcStmt> visit(ImcLABEL label, Object visArg){
-        Vector<ImcStmt> stmts = new Vector<>();
-        stmts.add(label);
-        return stmts;
-    }
-
-    @Override
     public Vector<ImcStmt> visit(ImcMOVE move, Object visArg){
         Vector<ImcStmt> stmts = new Vector<>();
-        move.dst.accept(exprCanonizer, stmts);
-        move.src.accept(exprCanonizer, stmts);
-        stmts.add(move);
+        ImcExpr dst = move.dst.accept(exprCanonizer, stmts);
+        ImcExpr src = move.src.accept(exprCanonizer, stmts);
+        stmts.add(new ImcMOVE(dst, src));
         return stmts;
     }
 
     @Override
     public Vector<ImcStmt> visit(ImcESTMT estmt, Object visArg){
         Vector<ImcStmt> stmts = new Vector<>();
-        estmt.expr.accept(exprCanonizer, stmts);
+        ImcExpr expr = estmt.expr.accept(exprCanonizer, stmts);
+        stmts.add(new ImcESTMT(expr));
         return stmts;
     }
 
@@ -62,5 +65,12 @@ public class StmtCanonizer implements ImcVisitor<Vector<ImcStmt>, Object> {
             allStmts.addAll(stmt.accept(this, visArg));
         }
         return allStmts;
+    }
+
+    @Override
+    public Vector<ImcStmt> visit(ImcLABEL label, Object visArg){
+        Vector<ImcStmt> stmts = new Vector<>();
+        stmts.add(label);
+        return stmts;
     }
 }

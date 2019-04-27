@@ -68,7 +68,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
             }
             case STR: {
                 AbsAccess access = Frames.strings.get(atomExpr);
-                ImcGen.exprImCode.put(atomExpr, new ImcMEM(new ImcNAME(access.label)));
+                ImcGen.exprImCode.put(atomExpr, new ImcNAME(access.label));
                 return null;
             }
         }
@@ -239,6 +239,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
     @Override
     public Object visit(AbsFunName funName, Stack<Frame> visArg){
         Vector<ImcExpr> args = new Vector<>();
+        // TODO: Maybe one more ImcMem? funName, Del and New
         Frame calledFrame = Frames.frames.get((AbsFunDecl) SemAn.declaredAt.get(funName));
         Frame thisFrame = visArg.peek();
         ImcExpr sl = new ImcTEMP(visArg.peek().FP);

@@ -93,7 +93,7 @@ public class FrmEvaluator extends AbsFullVisitor<Object, FrmEvaluator.Context> {
     public Object visit(AbsFunDecl decl, FrmEvaluator.Context visArg){
         FunContext context = (FunContext) visArg;
         Label label;
-		label = context.depth == 1 ? new Label(decl.name) : new Label();
+		label = context.depth == 0 ? new Label(decl.name) : new Label();
 		context.argsSize += new SemPtrType(new SemVoidType()).size();
 		Frames.frames.put(decl, new Frame(label, ((FunContext) visArg).depth + 1, 0, 0));
         return null;
