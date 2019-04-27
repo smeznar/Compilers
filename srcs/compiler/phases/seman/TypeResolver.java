@@ -401,10 +401,12 @@ public class TypeResolver extends AbsFullVisitor<SemType, TypeResolver.Phase> {
                         } else {
                             throw createError(expr, "Type of expression should be BOOL, INT, CHAR OR PTR.");
                         }
+                    /*
                     } else if(typeFst instanceof SemPtrType && typeScd instanceof SemPtrType){
                         SemType type = new SemBoolType();
                         SemAn.ofType.put(expr, type);
                         return type;
+                    */
                     } else {
                         throw createError(expr, "Types of expressions should match.");
                     }
