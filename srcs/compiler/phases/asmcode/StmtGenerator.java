@@ -30,8 +30,9 @@ public class StmtGenerator implements ImcVisitor<Vector<AsmInstr>, Object> {
         Vector<Temp> uses = new Vector<>();
         Vector<Label> jumps = new Vector<>();
         jumps.add(cjump.posLabel);
+        jumps.add(cjump.negLabel);
         uses.add(cjump.cond.accept(getExpressionGenerator(), instructions));
-        instructions.add(new AsmOPER("BNZ `l0", uses, null, jumps));
+        instructions.add(new AsmOPER("BNZ " + cjump.posLabel.name, uses, null, jumps));
         return instructions;
     }
 
@@ -40,7 +41,7 @@ public class StmtGenerator implements ImcVisitor<Vector<AsmInstr>, Object> {
         Vector<AsmInstr> instructions = new Vector<>();
         Vector<Label> jumps = new Vector<>();
         jumps.add(jump.label);
-        instructions.add(new AsmOPER("JMP `l0", null, null, jumps)); //Todo: Fix
+        instructions.add(new AsmOPER("JMP " + jump.label.name, null, null, jumps));
         return instructions;
     }
 
@@ -60,7 +61,7 @@ public class StmtGenerator implements ImcVisitor<Vector<AsmInstr>, Object> {
             instructions.add(new AsmOPER("", uses, defines, null)); // Todo: add instructions
         } else if (move.src instanceof ImcNAME && move.dst instanceof ImcTEMP){
             defines.add(((ImcTEMP) move.dst).temp);
-            // Todo: something with the label
+            instructions.add(new AsmOPER("LDA `d0," + ((ImcNAME) move.src).label.name, uses, defines, null));
         }
         // Todo: others
         return instructions;
