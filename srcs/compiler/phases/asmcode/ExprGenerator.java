@@ -56,9 +56,19 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
                 break;
             }
             case DIV: {
+                visArg.add(new AsmOPER("DIV `d0,`s0,`s1", uses, defines, null));
                 break;
             }
             case MOD: {
+                visArg.add(new AsmOPER("DIV `d0,`s0,`s1", uses, defines, null));
+                Vector<Temp> usesMul = new Vector<>();
+                usesMul.add(result);
+                usesMul.add(snd);
+                visArg.add(new AsmOPER("MUL `d0,`s0,`s1", usesMul, defines, null));
+                Vector<Temp> usesSub = new Vector<>();
+                usesSub.add(fst);
+                usesSub.add(result);
+                visArg.add(new AsmOPER("SUB `d0,`s0,`s1", usesSub, defines, null));
                 break;
             }
             case AND: {
@@ -99,15 +109,33 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
                 break;
             }
             case LTH: {
+                visArg.add(new AsmOPER("CMP `d0,`s0,`s1", uses, defines, null));
+                Vector<Temp> usesCmp = new Vector<>();
+                usesCmp.add(result);
+                visArg.add(new AsmOPER("CMP `d0,`s0,-1", usesCmp, defines, null));
+                visArg.add(new AsmOPER("SUB `d0,1,`s0", usesCmp, defines, null));
                 break;
             }
             case LEQ: {
+                visArg.add(new AsmOPER("CMP `d0,`s1,`s0", uses, defines, null));
+                Vector<Temp> usesCmp = new Vector<>();
+                usesCmp.add(result);
+                visArg.add(new AsmOPER("CMP `d0,`s0,-1", usesCmp, defines, null));
                 break;
             }
             case GTH: {
+                visArg.add(new AsmOPER("CMP `d0,`s1,`s0", uses, defines, null));
+                Vector<Temp> usesCmp = new Vector<>();
+                usesCmp.add(result);
+                visArg.add(new AsmOPER("CMP `d0,`s0,-1", usesCmp, defines, null));
+                visArg.add(new AsmOPER("SUB `d0,1,`s0", usesCmp, defines, null));
                 break;
             }
             case GEQ: {
+                visArg.add(new AsmOPER("CMP `d0,`s0,`s1", uses, defines, null));
+                Vector<Temp> usesCmp = new Vector<>();
+                usesCmp.add(result);
+                visArg.add(new AsmOPER("CMP `d0,`s0,-1", usesCmp, defines, null));
                 break;
             }
         }
@@ -117,12 +145,12 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
     @Override
     public Temp visit(ImcCALL call, Vector<AsmInstr> visArg){
         return null;
-    }
+    } // TODO
 
     @Override
     public Temp visit(ImcMEM mem, Vector<AsmInstr> visArg){
         return null;
-    }
+    } // TODO
 
     @Override
     public Temp visit(ImcNAME name, Vector<AsmInstr> visArg){

@@ -50,7 +50,6 @@ public class StmtGenerator implements ImcVisitor<Vector<AsmInstr>, Object> {
         Vector<AsmInstr> instructions = new Vector<>();
         Vector<Temp> uses = new Vector<>();
         Vector<Temp> defines = new Vector<>();
-        Vector<Label> jumps = new Vector<>();
         if (move.dst instanceof ImcTEMP && move.src instanceof ImcTEMP){
             uses.add(((ImcTEMP) move.src).temp);
             defines.add(((ImcTEMP) move.dst).temp);
@@ -62,8 +61,11 @@ public class StmtGenerator implements ImcVisitor<Vector<AsmInstr>, Object> {
         } else if (move.src instanceof ImcNAME && move.dst instanceof ImcTEMP){
             defines.add(((ImcTEMP) move.dst).temp);
             instructions.add(new AsmOPER("LDA `d0," + ((ImcNAME) move.src).label.name, uses, defines, null));
+        } else {
+            defines.add(move.dst.accept(getExpressionGenerator(), instructions));
+            uses.add(move.src.accept(getExpressionGenerator(), instructions));
+            instructions.add(new AsmOPER("STO `d0,`s0,0", uses, defines, null));
         }
-        // Todo: others
         return instructions;
     }
 
