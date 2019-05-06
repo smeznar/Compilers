@@ -144,17 +144,33 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
 
     @Override
     public Temp visit(ImcCALL call, Vector<AsmInstr> visArg){
-        return null;
-    } // TODO
+        int i = 0;
+        for (ImcExpr expr : call.args()){
+            // TODO: Maybe do something with static link?
+            Temp arg = expr.accept(this, visArg);
+            Vector<Temp> uses = new Vector<>();
+            uses.add(arg);
+            visArg.add(new AsmOPER("STO `s0,$254," + i, uses, null, null));
+            i += 8;
+        }
+        Temp result = new Temp();
+        Vector<Temp> uses = new Vector<>();
+        uses.add(result);
+        visArg.add(new AsmOPER("PUSHJ `s0,"+call.label.name, uses, null, null));
+        // TODO: Change the return value?
+        return result;
+    }
 
     @Override
     public Temp visit(ImcMEM mem, Vector<AsmInstr> visArg){
-        return null;
-    } // TODO
-
-    @Override
-    public Temp visit(ImcNAME name, Vector<AsmInstr> visArg){
-        return null; // cannot happen?
+        Temp addr = mem.addr.accept(this, visArg);
+        Temp result = new Temp();
+        Vector<Temp> uses = new Vector<>();
+        uses.add(addr);
+        Vector<Temp> defines = new Vector<>();
+        defines.add(result);
+        visArg.add(new AsmOPER("LDO `d0,`s0,0", uses, defines, null));
+        return result;
     }
 
     @Override
@@ -162,10 +178,34 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
         return temp.temp;
     }
 
+    //////// Can be handled in StmtGenerator also
+
+    @Override
+    public Temp visit(ImcNAME name, Vector<AsmInstr> visArg){
+        Temp result = new Temp();
+        Vector<Temp> defines = new Vector<>();
+        defines.add(result);
+        visArg.add(new AsmOPER("LDA `d0," + name.label.name, null, defines, null));
+        return result;
+    }
+
     @Override
     public Temp visit(ImcCONST constant, Vector<AsmInstr> visArg){
-        return null; // If it comes to a constant it should be an expression statement.
+        Temp result = new Temp();
+        Vector<Temp> uses = new Vector<>();
+        uses.add(result);
+        Vector<Temp> defines = new Vector<>();
+        defines.add(result);
+        // Todo: Popravi ukaze
+        visArg.add(new AsmOPER("SETL `d0,...", null, defines, null));
+        visArg.add(new AsmOPER("INCML `d0,...", uses, defines, null));
+        visArg.add(new AsmOPER("INCMH `d0,...", uses, defines, null));
+        visArg.add(new AsmOPER("INCH `d0,...", uses, defines, null));
+
+        return result;
     }
+
+    //////////////////////////////////////////////
 
     @Override
     public Temp visit(ImcSEXPR expr, Vector<AsmInstr> visArg){

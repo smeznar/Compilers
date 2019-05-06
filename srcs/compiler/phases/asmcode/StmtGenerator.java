@@ -50,21 +50,26 @@ public class StmtGenerator implements ImcVisitor<Vector<AsmInstr>, Object> {
         Vector<AsmInstr> instructions = new Vector<>();
         Vector<Temp> uses = new Vector<>();
         Vector<Temp> defines = new Vector<>();
-        if (move.dst instanceof ImcTEMP && move.src instanceof ImcTEMP){
-            uses.add(((ImcTEMP) move.src).temp);
+//        if (move.dst instanceof ImcTEMP && move.src instanceof ImcTEMP){
+//            uses.add(((ImcTEMP) move.src).temp);
+//            defines.add(((ImcTEMP) move.dst).temp);
+//            instructions.add(new AsmMOVE("STO `s0,`d0,0", uses, defines)); // Todo: what instruction
+//        } else if (move.dst instanceof ImcTEMP){
+//            defines.add(((ImcTEMP) move.dst).temp);
+//            Temp src = move.src.accept(getExpressionGenerator(), instructions);
+//            // TODO: 4je ukazi alpa zdruzit
+        if (move.dst instanceof ImcTEMP){
             defines.add(((ImcTEMP) move.dst).temp);
-            instructions.add(new AsmMOVE("STO `d0,`s0,0", uses, defines));
-        } else if (move.src instanceof ImcCONST){
-            Temp dst = move.dst.accept(getExpressionGenerator(), instructions);
-            defines.add(dst);
-            instructions.add(new AsmOPER("", uses, defines, null)); // Todo: add instructions
-        } else if (move.src instanceof ImcNAME && move.dst instanceof ImcTEMP){
-            defines.add(((ImcTEMP) move.dst).temp);
-            instructions.add(new AsmOPER("LDA `d0," + ((ImcNAME) move.src).label.name, uses, defines, null));
-        } else {
-            defines.add(move.dst.accept(getExpressionGenerator(), instructions));
             uses.add(move.src.accept(getExpressionGenerator(), instructions));
-            instructions.add(new AsmOPER("STO `d0,`s0,0", uses, defines, null));
+            instructions.add(new AsmMOVE("STO `s0,`d0,0", uses, defines)); // Todo: what instruction
+        } else if (move.dst instanceof ImcMEM){
+            Temp dst = move.dst.accept(getExpressionGenerator(), instructions);
+            Temp src = move.src.accept(getExpressionGenerator(), instructions);
+            defines.add(dst);
+            uses.add(src);
+            instructions.add(new AsmOPER("STO `s0,`d0,0", uses, defines, null));
+        } else {
+            throw new Report.Error("[AsmCode] Destination can only be Mem or Temp.");
         }
         return instructions;
     }
