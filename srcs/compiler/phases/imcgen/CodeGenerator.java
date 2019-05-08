@@ -209,7 +209,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
     public Object visit(AbsNewExpr newExpr, Stack<Frame> visArg){
         SemType type = SemAn.isType.get(newExpr.type);
         Vector<ImcExpr> args = new Vector<>();
-        args.add(new ImcTEMP(visArg.peek().FP));
+        args.add(new ImcCONST(0xF610BA1F));
         args.add(new ImcCONST(type.size()));
         ImcCALL call = new ImcCALL(new Label("new"), args);
         ImcGen.exprImCode.put(newExpr, call);
@@ -219,7 +219,7 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
     @Override
     public Object visit(AbsDelExpr delExpr, Stack<Frame> visArg){
         Vector<ImcExpr> args = new Vector<>();
-        args.add(new ImcTEMP(visArg.peek().FP));
+        args.add(new ImcCONST(0xF610BA1F));
         delExpr.expr.accept(this, visArg);
         args.add(ImcGen.exprImCode.get(delExpr.expr));
         ImcGen.exprImCode.put(delExpr, new ImcCALL(new Label("del"), args));
@@ -229,17 +229,15 @@ public class CodeGenerator extends AbsFullVisitor<Object, Stack<Frame>> {
     @Override
     public Object visit(AbsFunName funName, Stack<Frame> visArg){
         Vector<ImcExpr> args = new Vector<>();
-        // TODO: Maybe one more ImcMem? funName, Del and New
         Frame calledFrame = Frames.frames.get((AbsFunDecl) SemAn.declaredAt.get(funName));
         if (calledFrame == null || calledFrame.depth == 1){
-            args.add(new ImcTEMP(visArg.peek().FP));
+            args.add(new ImcCONST(0xF610BA1F));
         } else {
-            for (Frame f : visArg){
-                if (calledFrame.depth == f.depth + 1){
-                    args.add(new ImcTEMP(f.FP));
-                    break;
-                }
+            ImcExpr sl = new ImcTEMP(visArg.peek().FP);
+            for (int i=calledFrame.depth; i<=visArg.peek().depth; i++){
+                sl = new ImcMEM(sl);
             }
+            args.add(sl);
         }
         for (AbsExpr expr : funName.args.args()){
             expr.accept(this, visArg);

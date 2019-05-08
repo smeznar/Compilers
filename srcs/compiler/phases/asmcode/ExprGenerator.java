@@ -25,9 +25,12 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
         Vector<Temp> defines = new Vector<>();
         defines.add(result);
         if (expr.oper == ImcUNOP.Oper.NOT){
-            visArg.add(new AsmOPER("CMP `d0,1,`s0", uses, defines, null));
+            visArg.add(new AsmOPER("SUB `d0,`s0,1", uses, defines, null));
+            Vector<Temp> usesNeg = new Vector<>();
+            usesNeg.add(result);
+            visArg.add(new AsmOPER("NEG `d0,0,`s0", usesNeg, defines, null));
         } else {
-            visArg.add(new AsmOPER("NEG 'd0,0,`s0", uses, defines, null));
+            visArg.add(new AsmOPER("NEG `d0,0,`s0", uses, defines, null));
         }
         return result;
     }
@@ -61,14 +64,7 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
             }
             case MOD: {
                 visArg.add(new AsmOPER("DIV `d0,`s0,`s1", uses, defines, null));
-                Vector<Temp> usesMul = new Vector<>();
-                usesMul.add(result);
-                usesMul.add(snd);
-                visArg.add(new AsmOPER("MUL `d0,`s0,`s1", usesMul, defines, null));
-                Vector<Temp> usesSub = new Vector<>();
-                usesSub.add(fst);
-                usesSub.add(result);
-                visArg.add(new AsmOPER("SUB `d0,`s0,`s1", usesSub, defines, null));
+                visArg.add(new AsmOPER("GET `d0,rR", null, defines, null));
                 break;
             }
             case AND: {
@@ -95,7 +91,7 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
                 Vector<Temp> usesSub = new Vector<>();
                 defSub.add(result);
                 usesSub.add(result);
-                visArg.add(new AsmOPER("SUB `d0,1,`s0", usesSub, defSub, null));
+                visArg.add(new AsmOPER("NEG `d0,1,`s0", usesSub, defSub, null));
                 break;
             }
             case NEQ: {
@@ -113,7 +109,7 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
                 Vector<Temp> usesCmp = new Vector<>();
                 usesCmp.add(result);
                 visArg.add(new AsmOPER("CMP `d0,`s0,-1", usesCmp, defines, null));
-                visArg.add(new AsmOPER("SUB `d0,1,`s0", usesCmp, defines, null));
+                visArg.add(new AsmOPER("NEG `d0,1,`s0", usesCmp, defines, null));
                 break;
             }
             case LEQ: {
@@ -128,7 +124,7 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
                 Vector<Temp> usesCmp = new Vector<>();
                 usesCmp.add(result);
                 visArg.add(new AsmOPER("CMP `d0,`s0,-1", usesCmp, defines, null));
-                visArg.add(new AsmOPER("SUB `d0,1,`s0", usesCmp, defines, null));
+                visArg.add(new AsmOPER("NEG `d0,1,`s0", usesCmp, defines, null));
                 break;
             }
             case GEQ: {
@@ -145,19 +141,21 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
     @Override
     public Temp visit(ImcCALL call, Vector<AsmInstr> visArg){
         int i = 0;
+        Temp result = null;
         for (ImcExpr expr : call.args()){
-            // TODO: Maybe do something with static link?
             Temp arg = expr.accept(this, visArg);
+            if (i == 0){
+                result = arg;
+            }
             Vector<Temp> uses = new Vector<>();
             uses.add(arg);
             visArg.add(new AsmOPER("STO `s0,$254," + i, uses, null, null));
             i += 8;
         }
-        Temp result = new Temp();
-        Vector<Temp> uses = new Vector<>();
-        uses.add(result);
-        visArg.add(new AsmOPER("PUSHJ `s0,"+call.label.name, uses, null, null));
-        // TODO: Change the return value?
+        visArg.add(new AsmOPER("PUSHJ $16,"+call.label.name, null, null, null));
+        if (result == null) {
+            throw new Report.Error("[AsmGen] The return address should not be null.");
+        }
         return result;
     }
 
@@ -191,17 +189,23 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
 
     @Override
     public Temp visit(ImcCONST constant, Vector<AsmInstr> visArg){
-        Temp result = new Temp();
-        Vector<Temp> uses = new Vector<>();
-        uses.add(result);
         Vector<Temp> defines = new Vector<>();
+        Temp result = new Temp();
         defines.add(result);
-        // Todo: Popravi ukaze
-        visArg.add(new AsmOPER("SETL `d0,...", null, defines, null));
-        visArg.add(new AsmOPER("INCML `d0,...", uses, defines, null));
-        visArg.add(new AsmOPER("INCMH `d0,...", uses, defines, null));
-        visArg.add(new AsmOPER("INCH `d0,...", uses, defines, null));
 
+        long value = constant.value;
+        long low = value & ((1<<16) - 1);
+        value = value >> 16;
+        long medLow = value & ((1<<16) - 1);
+        value = value >> 16;
+        long medhigh = value & ((1<<16) - 1);
+        value = value >> 16;
+        long high = value & ((1<<16) - 1);
+
+        visArg.add(new AsmOPER("SETL `d0, " + low, null, defines, null));
+        visArg.add(new AsmOPER("INCML `d0, " + medLow, null, defines, null));
+        visArg.add(new AsmOPER("INCMH `d0, " + medhigh, null, defines, null));
+        visArg.add(new AsmOPER("INCH `d0, " + high, null, defines, null));
         return result;
     }
 

@@ -31,8 +31,8 @@ public class ChunkGenerator extends AbsFullVisitor<Object, Object> {
     @Override
     public Object visit(AbsSource source, Object visArg){
         super.visit(source, visArg);
-        Interpreter interpreter = new Interpreter(Chunks.dataChunks, Chunks.codeChunks);
-        interpreter.run("_main");
+        //Interpreter interpreter = new Interpreter(Chunks.dataChunks, Chunks.codeChunks);
+        //interpreter.run("_main");
         return null;
     }
 
