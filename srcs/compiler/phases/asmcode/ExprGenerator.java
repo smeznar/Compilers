@@ -192,6 +192,8 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
         Vector<Temp> defines = new Vector<>();
         Temp result = new Temp();
         defines.add(result);
+        Vector<Temp> uses = new Vector<>();
+        uses.add(result);
 
         long value = constant.value;
         long low = value & ((1<<16) - 1);
@@ -202,10 +204,10 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
         value = value >> 16;
         long high = value & ((1<<16) - 1);
 
-        visArg.add(new AsmOPER("SETL `d0, " + low, null, defines, null));
-        visArg.add(new AsmOPER("INCML `d0, " + medLow, null, defines, null));
-        visArg.add(new AsmOPER("INCMH `d0, " + medhigh, null, defines, null));
-        visArg.add(new AsmOPER("INCH `d0, " + high, null, defines, null));
+        visArg.add(new AsmOPER("SETL `d0, " + low, uses, defines, null));
+        visArg.add(new AsmOPER("INCML `d0, " + medLow, uses, defines, null));
+        visArg.add(new AsmOPER("INCMH `d0, " + medhigh, uses, defines, null));
+        visArg.add(new AsmOPER("INCH `d0, " + high, uses, defines, null));
         return result;
     }
 
