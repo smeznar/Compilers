@@ -4,6 +4,8 @@
 package compiler.phases.livean;
 
 import java.util.*;
+
+import compiler.common.report.Report;
 import compiler.data.asmcode.*;
 import compiler.data.layout.*;
 import compiler.phases.*;
@@ -19,11 +21,42 @@ public class LiveAn extends Phase {
 	}
 
 	public void chunkLiveness(Code code) {
-		while (true){ // No Change
-			for (AsmInstr instr: code.instrs){
-				// Do something
+		boolean isDifferent;
+		do {
+			isDifferent = false;
+			for (int i=code.instrs.size()-1; i>=0; i--){
+				AsmInstr instr = code.instrs.elementAt(i);
+				HashSet<Temp> newIn = new HashSet<>(instr.uses());
+				newIn.addAll(instr.out());
+				newIn.removeAll(instr.defs());
+				HashSet<Temp> newOut = new HashSet<>();
+				if (instr.jumps().size() == 0){
+					newOut.addAll(code.instrs.elementAt(i+1).in());
+				} else {
+					for (Label jmpLabel:instr.jumps()){
+						newOut.addAll(findSuccesorsIns(code, jmpLabel));
+					}
+				}
+				if (!(newIn.equals(instr.in()) && newOut.equals(instr.out()))){
+					isDifferent = true;
+					instr.addInTemps(newIn);
+					instr.addOutTemp(newOut);
+				}
+			}
+		} while (isDifferent);
+	}
+
+	private HashSet<Temp> findSuccesorsIns(Code code, Label label){
+		if (label.equals(code.exitLabel)){
+			return new HashSet<>();
+		} else {
+			for (AsmInstr instr : code.instrs){
+				if (instr instanceof AsmLABEL && instr.toString().equals(label.name)){
+					return instr.in();
+				}
 			}
 		}
+		throw new Report.Error("There is no Label" + label.name +" in the code chunk");
 	}
 
 	public void chunksLiveness() {
