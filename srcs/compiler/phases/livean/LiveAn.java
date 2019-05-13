@@ -20,8 +20,11 @@ public class LiveAn extends Phase {
 		super("livean");
 	}
 
+	private HashMap<String, AsmInstr> labels = new HashMap<>();
+
 	public void chunkLiveness(Code code) {
 		boolean isDifferent;
+		add_labels(code);
 		do {
 			isDifferent = false;
 			for (int i=code.instrs.size()-1; i>=0; i--){
@@ -46,17 +49,24 @@ public class LiveAn extends Phase {
 		} while (isDifferent);
 	}
 
+	private void add_labels(Code code){
+		for (AsmInstr instr : code.instrs){
+			if (instr instanceof AsmLABEL){
+				labels.put(instr.toString(), instr);
+			}
+		}
+	}
+
 	private HashSet<Temp> findSuccesorsIns(Code code, Label label){
 		if (label.equals(code.exitLabel)){
 			return new HashSet<>();
 		} else {
-			for (AsmInstr instr : code.instrs){
-				if (instr instanceof AsmLABEL && instr.toString().equals(label.name)){
-					return instr.in();
-				}
+			try {
+				return labels.get(label.name).in();
+			} catch (Exception e){
+				throw new Report.Error("There is no Label" + label.name +" in the code chunk");
 			}
 		}
-		throw new Report.Error("There is no Label" + label.name +" in the code chunk");
 	}
 
 	public void chunksLiveness() {
