@@ -27,11 +27,11 @@ public class LiveAn extends Phase {
 		add_labels(code);
 		do {
 			isDifferent = false;
-			for (int i=code.instrs.size()-1; i>=0; i--){
+			for (int i=0; i<code.instrs.size(); i++){
 				AsmInstr instr = code.instrs.elementAt(i);
-				HashSet<Temp> newIn = new HashSet<>(instr.uses());
-				newIn.addAll(instr.out());
+				HashSet<Temp> newIn = new HashSet<>(instr.out());
 				newIn.removeAll(instr.defs());
+				newIn.addAll(instr.uses());
 				HashSet<Temp> newOut = new HashSet<>();
 				if (instr.jumps().size() == 0){
 					newOut.addAll(code.instrs.elementAt(i+1).in());
