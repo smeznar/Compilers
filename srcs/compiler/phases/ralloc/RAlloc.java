@@ -7,6 +7,8 @@ import compiler.data.asmcode.*;
 import compiler.phases.*;
 import compiler.phases.asmcode.*;
 
+import java.util.Vector;
+
 /**
  * Register allocation phase.
  * 
@@ -23,7 +25,13 @@ public class RAlloc extends Phase {
 	 * If necessary, the code of each function is modified.
 	 */
 	public void tempsToRegs() {
-		// TODO
+		Vector<Code> codes = AsmGen.codes;
+		Vector<Code> modifiedCodes = new Vector<>();
+		for (Code c : codes){
+			Graph graph = new Graph(c);
+			modifiedCodes.add(graph.getModifiedCode());
+		}
+		AsmGen.codes = modifiedCodes;
 	}
 
 	public void log() {
