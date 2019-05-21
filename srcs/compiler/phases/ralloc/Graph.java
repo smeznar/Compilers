@@ -2,6 +2,8 @@ package compiler.phases.ralloc;
 
 import compiler.Main;
 import compiler.data.asmcode.AsmInstr;
+import compiler.data.asmcode.AsmLABEL;
+import compiler.data.asmcode.AsmOPER;
 import compiler.data.asmcode.Code;
 import compiler.data.layout.Temp;
 import compiler.phases.livean.LiveAn;
@@ -14,6 +16,7 @@ class Node {
     int color;
     boolean inColorStack = false;
     boolean isPotentialSpill = false;
+    long offset = -1;
 
     Node(Temp t){
         temp = t;
@@ -61,6 +64,7 @@ public class Graph {
     Stack<Node> colorNodeStack;
     ArrayList<Integer> colors;
     long tempSize = 0;
+    LiveAn liveAn;
 
 
     public Graph(Code code){
@@ -69,9 +73,10 @@ public class Graph {
         nodes = new ArrayList<>();
         colorNodeStack = new Stack<>();
         colors = new ArrayList<>();
-        for (int i=0; i<8; i++){
+        for (int i=0; i<Main.numOfRegs; i++){
             colors.add(i);
         }
+        liveAn = new LiveAn();
         create_graph(code.instrs);
     }
 
@@ -120,7 +125,7 @@ public class Graph {
             haveRemovedMore = false;
             for (int i = 0; i < nodes.size(); i++) {
                 Node n = nodes.get(i);
-                if (!n.inColorStack && n.numOfConnections() < 8) {
+                if (!n.inColorStack && n.numOfConnections() < Main.numOfRegs) {
                     n.inColorStack = true;
                     colorNodeStack.push(n);
                     haveRemovedMore = true;
@@ -164,7 +169,7 @@ public class Graph {
             }
         }
         if (!canColorAll){
-            //spillNodes();
+            spillNodes();
         }
     }
 
@@ -182,15 +187,44 @@ public class Graph {
     void spillNodes(){
         Vector<AsmInstr> newInstructions = new Vector<>();
         for (AsmInstr instr: code.instrs){
-            boolean tempIsIn = false;
-            for (Node n : spilledNodes){
-                // do something
-            }
-            if (!tempIsIn){
+            if (instr instanceof AsmLABEL){
                 newInstructions.add(instr);
+                continue;
             }
+            Vector<Temp> newDefines = new Vector<>();
+            Vector<Temp> newUses = new Vector<>();
+            for (Temp t: instr.uses()){
+                for (Node n : spilledNodes){
+                    if (t.equals(n.temp)){
+                        long offset = n.offset;
+                        // TODO: load spilled temps
+                    }
+                }
+            }
+            newInstructions.add(new AsmOPER(((AsmOPER) instr).instr, newUses, newDefines, instr.jumps()));
+            for (Temp t: instr.defs()){
+                for (Node n : spilledNodes){
+                    if (t.equals(n.temp)){
+                        if (n.offset == -1){
+                            n.offset = tempSize;
+                            tempSize += 8;
+                        }
+                        // TODO: save spilled temps
+                    }
+                }
+            }
+            /*
+            TODO: replace with old temps if not in spilleds
+            if (newDefines.size() == 0){
+                newDefines.addAll(instr.defs());
+            }
+            if (newUses.size() == 0){
+                newUses.addAll(instr.uses());
+            }*/
         }
-        create_graph(newInstructions);
+        Code newCode = new Code(code.frame, code.entryLabel, code.exitLabel, newInstructions);
+        code = liveAn.chunkLiveness(newCode);
+        create_graph(code.instrs);
         simplify();
     }
 

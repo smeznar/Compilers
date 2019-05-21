@@ -27,7 +27,7 @@ import compiler.data.layout.*;
 public class AsmOPER extends AsmInstr {
 
 	/** The string representation of the instruction. */
-	private final String instr;
+	public final String instr;
 
 	/** The list of temporaries used by this instruction. */
 	private final Vector<Temp> uses;

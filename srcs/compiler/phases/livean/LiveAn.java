@@ -22,7 +22,7 @@ public class LiveAn extends Phase {
 
 	private HashMap<String, AsmInstr> labels = new HashMap<>();
 
-	public void chunkLiveness(Code code) {
+	public Code chunkLiveness(Code code) {
 		boolean isDifferent;
 		add_labels(code);
 		do {
@@ -47,6 +47,7 @@ public class LiveAn extends Phase {
 				}
 			}
 		} while (isDifferent);
+		return code;
 	}
 
 	private void add_labels(Code code){
