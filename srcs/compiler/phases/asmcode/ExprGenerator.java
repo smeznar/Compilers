@@ -141,21 +141,19 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
     @Override
     public Temp visit(ImcCALL call, Vector<AsmInstr> visArg){
         int i = 0;
-        Temp result = null;
         for (ImcExpr expr : call.args()){
             Temp arg = expr.accept(this, visArg);
-            if (i == 0){
-                result = arg;
-            }
             Vector<Temp> uses = new Vector<>();
             uses.add(arg);
             visArg.add(new AsmOPER("STO `s0,$254," + i, uses, null, null));
             i += 8;
         }
         visArg.add(new AsmOPER("PUSHJ $16,"+call.label.name, null, null, null));
-        if (result == null) {
-            throw new Report.Error("[AsmGen] The return address should not be null.");
-        }
+
+        Temp result = new Temp();
+        Vector<Temp> defines = new Vector<>();
+        defines.add(result);
+        visArg.add(new AsmOPER("LDO `d0,$254,0" , null, defines, null));
         return result;
     }
 
@@ -205,9 +203,9 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
         long high = value & ((1<<16) - 1);
 
         visArg.add(new AsmOPER("SETL `d0, " + low, null, defines, null));
-        visArg.add(new AsmOPER("INCML `s0, " + medLow, uses, null, null));
-        visArg.add(new AsmOPER("INCMH `s0, " + medhigh, uses, null, null));
-        visArg.add(new AsmOPER("INCH `s0, " + high, uses, null, null));
+        visArg.add(new AsmOPER("INCML `s0, " + medLow, uses, defines, null));
+        visArg.add(new AsmOPER("INCMH `s0, " + medhigh, uses, defines, null));
+        visArg.add(new AsmOPER("INCH `s0, " + high, uses, defines, null));
         return result;
     }
 
