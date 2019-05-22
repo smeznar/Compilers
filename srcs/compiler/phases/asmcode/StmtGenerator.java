@@ -32,7 +32,7 @@ public class StmtGenerator implements ImcVisitor<Vector<AsmInstr>, Object> {
         jumps.add(cjump.posLabel);
         jumps.add(cjump.negLabel);
         uses.add(cjump.cond.accept(getExpressionGenerator(), instructions));
-        instructions.add(new AsmOPER("BNZ " + cjump.posLabel.name, uses, null, jumps));
+        instructions.add(new AsmOPER("BNZ `s0," + cjump.posLabel.name, uses, null, jumps));
         return instructions;
     }
 
@@ -53,13 +53,14 @@ public class StmtGenerator implements ImcVisitor<Vector<AsmInstr>, Object> {
         if (move.dst instanceof ImcTEMP){
             defines.add(((ImcTEMP) move.dst).temp);
             uses.add(move.src.accept(getExpressionGenerator(), instructions));
-            instructions.add(new AsmMOVE("SET `d0,`s0", uses, defines));
+            instructions.add(new AsmMOVE("SET `d0,`s0", uses, defines)); // TODO: check
         } else if (move.dst instanceof ImcMEM){
             Temp dst = move.dst.accept(getExpressionGenerator(), instructions);
             Temp src = move.src.accept(getExpressionGenerator(), instructions);
-            defines.add(dst);
+            //defines.add(dst);
             uses.add(src);
-            instructions.add(new AsmOPER("STO `s0,`d0,0", uses, defines, null));
+            uses.add(dst);
+            instructions.add(new AsmOPER("STO `s0,`s1,0", uses, defines, null));
         } else {
             throw new Report.Error("[AsmCode] Destination can only be Mem or Temp.");
         }

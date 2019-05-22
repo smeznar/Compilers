@@ -20,7 +20,7 @@ public class LiveAn extends Phase {
 		super("livean");
 	}
 
-	private HashMap<String, AsmInstr> labels = new HashMap<>();
+	private HashMap<String, AsmInstr> labels;
 
 	public Code chunkLiveness(Code code) {
 		boolean isDifferent;
@@ -51,6 +51,7 @@ public class LiveAn extends Phase {
 	}
 
 	private void add_labels(Code code){
+		labels = new HashMap<>();
 		for (AsmInstr instr : code.instrs){
 			if (instr instanceof AsmLABEL){
 				labels.put(instr.toString(), instr);

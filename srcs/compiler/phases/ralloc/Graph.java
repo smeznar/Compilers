@@ -69,9 +69,6 @@ public class Graph {
 
     public Graph(Code code){
         this.code = code;
-        nodeMap = new HashMap<>();
-        nodes = new ArrayList<>();
-        colorNodeStack = new Stack<>();
         colors = new ArrayList<>();
         for (int i=0; i<Main.numOfRegs; i++){
             colors.add(i);
@@ -81,6 +78,11 @@ public class Graph {
     }
 
     void create_graph(Vector<AsmInstr> instrs){
+        nodeMap = new HashMap<>();
+        nodes = new ArrayList<>();
+        colorNodeStack = new Stack<>();
+        spilledNodes = new ArrayList<>();
+        tempSize = 0;
         HashSet<Temp> temps = new HashSet<>();
         for (AsmInstr instr : instrs){
             temps.addAll(instr.defs());
@@ -152,7 +154,7 @@ public class Graph {
     void colorGraph(){
         boolean canColorAll = true;
         for (Node node: colorNodeStack){
-            HashSet<Integer> colorsLeft = new HashSet<Integer>(colors);
+            HashSet<Integer> colorsLeft = new HashSet<>(colors);
             HashSet<Integer> neighboursColors = node.getNeighbourColors();
             colorsLeft.removeAll(neighboursColors);
             if (colorsLeft.size() > 0){
@@ -191,17 +193,20 @@ public class Graph {
                 newInstructions.add(instr);
                 continue;
             }
-            Vector<Temp> newDefines = new Vector<>();
             Vector<Temp> newUses = new Vector<>();
             for (Temp t: instr.uses()){
+                boolean isSpilled = false;
                 for (Node n : spilledNodes){
                     if (t.equals(n.temp)){
-                        long offset = n.offset;
-                        // TODO: load spilled temps
+                        isSpilled = true;
+                        newInstructions.addAll(getTempFromStorage(n.offset, newUses));
                     }
                 }
+                if (!isSpilled){
+                    newUses.add(t);
+                }
             }
-            newInstructions.add(new AsmOPER(((AsmOPER) instr).instr, newUses, newDefines, instr.jumps()));
+            newInstructions.add(new AsmOPER(((AsmOPER) instr).instr, newUses, instr.defs(), instr.jumps()));
             for (Temp t: instr.defs()){
                 for (Node n : spilledNodes){
                     if (t.equals(n.temp)){
@@ -209,23 +214,70 @@ public class Graph {
                             n.offset = tempSize;
                             tempSize += 8;
                         }
-                        // TODO: save spilled temps
+                        newInstructions.addAll(storeTemp(n.offset, t));
                     }
                 }
             }
-            /*
-            TODO: replace with old temps if not in spilleds
-            if (newDefines.size() == 0){
-                newDefines.addAll(instr.defs());
-            }
-            if (newUses.size() == 0){
-                newUses.addAll(instr.uses());
-            }*/
         }
         Code newCode = new Code(code.frame, code.entryLabel, code.exitLabel, newInstructions);
         code = liveAn.chunkLiveness(newCode);
         create_graph(code.instrs);
         simplify();
+    }
+
+    private Vector<AsmInstr> getTempFromStorage(long offset, Vector<Temp> newUses){
+        Vector<AsmInstr> instructions = new Vector<>();
+        // Offset set
+        Vector<Temp> setTemps = new Vector<>();
+        Temp offsetTemp = new Temp();
+        setTemps.add(offsetTemp);
+        long low = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        long medLow = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        long medhigh = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        long high = offset & ((1<<16) - 1);
+        instructions.add(new AsmOPER("SETL `d0, " + low, null, setTemps, null));
+        instructions.add(new AsmOPER("INCML `s0, " + medLow, setTemps, setTemps, null));
+        instructions.add(new AsmOPER("INCMH `s0, " + medhigh, setTemps, setTemps, null));
+        instructions.add(new AsmOPER("INCH `s0, " + high, setTemps, setTemps, null));
+        // Sub
+        instructions.add(new AsmOPER("SUB `d0,$253,`s0", setTemps, setTemps, null));
+        // Load
+        Vector<Temp> loadDefine = new Vector<>();
+        Temp loadedTo = new Temp();
+        newUses.add(loadedTo);
+        loadDefine.add(loadedTo);
+        instructions.add(new AsmOPER("LDO `d0,`s0,0", setTemps, loadDefine, null));
+        return instructions;
+    }
+
+    private Vector<AsmInstr> storeTemp(long offset, Temp definedTemp){
+        Vector<AsmInstr> instructions = new Vector<>();
+        // Set
+        Vector<Temp> setTemps = new Vector<>();
+        Temp offsetTemp = new Temp();
+        setTemps.add(offsetTemp);
+        long low = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        long medLow = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        long medhigh = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        long high = offset & ((1<<16) - 1);
+        instructions.add(new AsmOPER("SETL `d0, " + low, null, setTemps, null));
+        instructions.add(new AsmOPER("INCML `s0, " + medLow, setTemps, setTemps, null));
+        instructions.add(new AsmOPER("INCMH `s0, " + medhigh, setTemps, setTemps, null));
+        instructions.add(new AsmOPER("INCH `s0, " + high, setTemps, setTemps, null));
+        // Sub
+        instructions.add(new AsmOPER("SUB `d0,$253,`s0", setTemps, setTemps, null));
+        // Store
+        Vector<Temp> storeUses = new Vector<>();
+        storeUses.add(definedTemp);
+        storeUses.add(offsetTemp);
+        instructions.add(new AsmOPER("STO `s0,`s1,0", storeUses, null, null));
+        return instructions;
     }
 
     void mapColors(){
