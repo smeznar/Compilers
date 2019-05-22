@@ -30,7 +30,7 @@ public class Main {
 	private static HashMap<String, String> cmdLine = new HashMap<String, String>();
 
 	/** The number of general-purpose registers. */
-	public static final int numOfRegs = 4;
+	public static final int numOfRegs = 8;
 
 	/**
 	 * Returns the value of a command line argument.

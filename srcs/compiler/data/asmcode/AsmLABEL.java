@@ -14,7 +14,7 @@ import compiler.data.layout.*;
 public class AsmLABEL extends AsmOPER {
 
 	/** The label. */
-	private final Label label;
+	public final Label label;
 
 	public AsmLABEL(Label label) {
 		super("", null, null, null);

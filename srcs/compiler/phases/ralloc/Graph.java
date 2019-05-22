@@ -82,7 +82,6 @@ public class Graph {
         nodes = new ArrayList<>();
         colorNodeStack = new Stack<>();
         spilledNodes = new ArrayList<>();
-        tempSize = 0;
         HashSet<Temp> temps = new HashSet<>();
         for (AsmInstr instr : instrs){
             temps.addAll(instr.defs());
@@ -92,6 +91,10 @@ public class Graph {
             Node n = new Node(t);
             nodes.add(n);
             nodeMap.put(t, n);
+            if (t.equals(code.frame.FP)){
+                n.color = 253;
+                n.inColorStack = true;
+            }
         }
         for (AsmInstr instr : instrs){
             for (Temp t1: instr.in()){
@@ -190,7 +193,7 @@ public class Graph {
         Vector<AsmInstr> newInstructions = new Vector<>();
         for (AsmInstr instr: code.instrs){
             if (instr instanceof AsmLABEL){
-                newInstructions.add(instr);
+                newInstructions.add(new AsmLABEL(((AsmLABEL) instr).label));
                 continue;
             }
             Vector<Temp> newUses = new Vector<>();
