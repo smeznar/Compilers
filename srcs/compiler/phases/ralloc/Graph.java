@@ -242,9 +242,15 @@ public class Graph {
         offset = offset >> 16;
         long high = offset & ((1<<16) - 1);
         instructions.add(new AsmOPER("SETL `d0, " + low, null, setTemps, null));
-        instructions.add(new AsmOPER("INCML `s0, " + medLow, setTemps, setTemps, null));
-        instructions.add(new AsmOPER("INCMH `s0, " + medhigh, setTemps, setTemps, null));
-        instructions.add(new AsmOPER("INCH `s0, " + high, setTemps, setTemps, null));
+        if (medLow > 0) {
+            instructions.add(new AsmOPER("INCML `s0, " + medLow, setTemps, setTemps, null));
+        }
+        if (medhigh > 0) {
+            instructions.add(new AsmOPER("INCMH `s0, " + medhigh, setTemps, setTemps, null));
+        }
+        if (high > 0) {
+            instructions.add(new AsmOPER("INCH `s0, " + high, setTemps, setTemps, null));
+        }
         // Sub
         instructions.add(new AsmOPER("SUB `d0,$253,`s0", setTemps, setTemps, null));
         // Load
@@ -270,10 +276,15 @@ public class Graph {
         offset = offset >> 16;
         long high = offset & ((1<<16) - 1);
         instructions.add(new AsmOPER("SETL `d0, " + low, null, setTemps, null));
-        instructions.add(new AsmOPER("INCML `s0, " + medLow, setTemps, setTemps, null));
-        instructions.add(new AsmOPER("INCMH `s0, " + medhigh, setTemps, setTemps, null));
-        instructions.add(new AsmOPER("INCH `s0, " + high, setTemps, setTemps, null));
-        // Sub
+        if (medLow > 0) {
+            instructions.add(new AsmOPER("INCML `s0, " + medLow, setTemps, setTemps, null));
+        }
+        if (medhigh > 0) {
+            instructions.add(new AsmOPER("INCMH `s0, " + medhigh, setTemps, setTemps, null));
+        }
+        if (high > 0) {
+            instructions.add(new AsmOPER("INCH `s0, " + high, setTemps, setTemps, null));
+        }// Sub
         instructions.add(new AsmOPER("SUB `d0,$253,`s0", setTemps, setTemps, null));
         // Store
         Vector<Temp> storeUses = new Vector<>();

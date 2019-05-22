@@ -203,9 +203,15 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
         long high = value & ((1<<16) - 1);
 
         visArg.add(new AsmOPER("SETL `d0, " + low, null, defines, null));
-        visArg.add(new AsmOPER("INCML `s0, " + medLow, uses, defines, null));
-        visArg.add(new AsmOPER("INCMH `s0, " + medhigh, uses, defines, null));
-        visArg.add(new AsmOPER("INCH `s0, " + high, uses, defines, null));
+        if (medLow > 0) {
+            visArg.add(new AsmOPER("INCML `s0, " + medLow, uses, defines, null));
+        }
+        if (medhigh > 0) {
+            visArg.add(new AsmOPER("INCMH `s0, " + medhigh, uses, defines, null));
+        }
+        if (high > 0) {
+            visArg.add(new AsmOPER("INCH `s0, " + high, uses, defines, null));
+        }
         return result;
     }
 
