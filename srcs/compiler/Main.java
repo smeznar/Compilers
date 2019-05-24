@@ -5,6 +5,7 @@ package compiler;
 
 import java.util.*;
 import compiler.common.report.*;
+import compiler.phases.endproduct.EndProd;
 import compiler.phases.lexan.*;
 import compiler.phases.synan.*;
 import compiler.phases.abstr.*;
@@ -24,7 +25,7 @@ import compiler.phases.ralloc.*;
 public class Main {
 
 	/** All valid phases of the compiler. */
-	private static final String phases = "lexan|synan|abstr|seman|frames|imcgen|chunks|asmgen|livean|ralloc";
+	private static final String phases = "lexan|synan|abstr|seman|frames|imcgen|chunks|asmgen|livean|ralloc|endproduct";
 
 	/** Values of command line arguments. */
 	private static HashMap<String, String> cmdLine = new HashMap<String, String>();
@@ -94,7 +95,7 @@ public class Main {
 				throw new Report.Error("Source file not specified.");
 			}
 			if (cmdLine.get("--dst-file-name") == null) {
-				cmdLine.put("--dst-file-name", cmdLine.get("--src-file-name").replaceFirst("\\.[^./]*$", "") + ".asm");
+				cmdLine.put("--dst-file-name", cmdLine.get("--src-file-name").replaceFirst("\\.[^./]*$", "") + ".mms");
 			}
 			if (cmdLine.get("--target-phase") == null) {
 				cmdLine.put("--target-phase", phases.replaceFirst("^.*\\|", ""));
@@ -212,6 +213,14 @@ public class Main {
 					ralloc.log();
 				}
 				if (cmdLine.get("--target-phase").equals("ralloc"))
+					break;
+
+				try (EndProd endProd = new EndProd()){
+					endProd.finishCode();
+					endProd.log();
+				}
+
+				if (cmdLine.get("--target-phase").equals("endproduct"))
 					break;
 
 				int endWarnings = Report.numOfWarnings();
