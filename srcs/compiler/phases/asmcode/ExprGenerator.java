@@ -106,32 +106,56 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
             }
             case LTH: {
                 visArg.add(new AsmOPER("CMP `d0,`s0,`s1", uses, defines, null));
+                Temp minOne = new Temp();
+                Vector<Temp> defsMinOne = new Vector<>();
+                defsMinOne.add(minOne);
+                visArg.add(new AsmOPER("NEG `d0,0,1", null, defsMinOne, null));
                 Vector<Temp> usesCmp = new Vector<>();
                 usesCmp.add(result);
-                visArg.add(new AsmOPER("CMP `d0,`s0,-1", usesCmp, defines, null));
-                visArg.add(new AsmOPER("NEG `d0,1,`s0", usesCmp, defines, null));
+                usesCmp.add(minOne);
+                visArg.add(new AsmOPER("CMP `d0,`s0,`s1", usesCmp, defines, null));
+                Vector<Temp> usesNeg = new Vector<>();
+                usesNeg.add(result);
+                visArg.add(new AsmOPER("NEG `d0,1,`s0", usesNeg, defines, null));
                 break;
             }
             case LEQ: {
                 visArg.add(new AsmOPER("CMP `d0,`s1,`s0", uses, defines, null));
+                Temp minOne = new Temp();
+                Vector<Temp> defsMinOne = new Vector<>();
+                defsMinOne.add(minOne);
+                visArg.add(new AsmOPER("NEG `d0,0,1", null, defsMinOne, null));
                 Vector<Temp> usesCmp = new Vector<>();
                 usesCmp.add(result);
-                visArg.add(new AsmOPER("CMP `d0,`s0,-1", usesCmp, defines, null));
+                usesCmp.add(minOne);
+                visArg.add(new AsmOPER("CMP `d0,`s0,`s1", usesCmp, defines, null));
                 break;
             }
             case GTH: {
                 visArg.add(new AsmOPER("CMP `d0,`s1,`s0", uses, defines, null));
+                Temp minOne = new Temp();
+                Vector<Temp> defsMinOne = new Vector<>();
+                defsMinOne.add(minOne);
+                visArg.add(new AsmOPER("NEG `d0,0,1", null, defsMinOne, null));
                 Vector<Temp> usesCmp = new Vector<>();
                 usesCmp.add(result);
-                visArg.add(new AsmOPER("CMP `d0,`s0,-1", usesCmp, defines, null));
-                visArg.add(new AsmOPER("NEG `d0,1,`s0", usesCmp, defines, null));
+                usesCmp.add(minOne);
+                visArg.add(new AsmOPER("CMP `d0,`s0,`s1", usesCmp, defines, null));
+                Vector<Temp> usesNeg = new Vector<>();
+                usesNeg.add(result);
+                visArg.add(new AsmOPER("NEG `d0,1,`s0", usesNeg, defines, null));
                 break;
             }
             case GEQ: {
                 visArg.add(new AsmOPER("CMP `d0,`s0,`s1", uses, defines, null));
+                Temp minOne = new Temp();
+                Vector<Temp> defsMinOne = new Vector<>();
+                defsMinOne.add(minOne);
+                visArg.add(new AsmOPER("NEG `d0,0,1", null, defsMinOne, null));
                 Vector<Temp> usesCmp = new Vector<>();
                 usesCmp.add(result);
-                visArg.add(new AsmOPER("CMP `d0,`s0,-1", usesCmp, defines, null));
+                usesCmp.add(minOne);
+                visArg.add(new AsmOPER("CMP `d0,`s0,`s1", usesCmp, defines, null));
                 break;
             }
         }
@@ -202,15 +226,15 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
         value = value >> 16;
         long high = value & ((1<<16) - 1);
 
-        visArg.add(new AsmOPER("SETL `d0, " + low, null, defines, null));
+        visArg.add(new AsmOPER("SETL `d0," + low, null, defines, null));
         if (medLow > 0) {
-            visArg.add(new AsmOPER("INCML `s0, " + medLow, uses, defines, null));
+            visArg.add(new AsmOPER("INCML `s0," + medLow, uses, defines, null));
         }
         if (medhigh > 0) {
-            visArg.add(new AsmOPER("INCMH `s0, " + medhigh, uses, defines, null));
+            visArg.add(new AsmOPER("INCMH `s0," + medhigh, uses, defines, null));
         }
         if (high > 0) {
-            visArg.add(new AsmOPER("INCH `s0, " + high, uses, defines, null));
+            visArg.add(new AsmOPER("INCH `s0," + high, uses, defines, null));
         }
         return result;
     }

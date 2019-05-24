@@ -215,9 +215,12 @@ public class Main {
 				if (cmdLine.get("--target-phase").equals("ralloc"))
 					break;
 
-				try (EndProd endProd = new EndProd()){
+				try {
+					EndProd endProd = new EndProd();
 					endProd.finishCode();
 					endProd.log();
+				} catch (Exception e){
+					e.printStackTrace();
 				}
 
 				if (cmdLine.get("--target-phase").equals("endproduct"))

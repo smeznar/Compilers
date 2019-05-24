@@ -1,9 +1,7 @@
 package compiler.phases.endproduct;
 
-import compiler.data.asmcode.AsmInstr;
 import compiler.data.asmcode.Code;
 import compiler.data.chunk.DataChunk;
-import compiler.phases.Phase;
 import compiler.phases.asmcode.AsmGen;
 import compiler.phases.chunks.Chunks;
 
@@ -11,18 +9,13 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.Vector;
 
-public class EndProd extends Phase {
-    /**
-     * Constructs a new phase of a compiler. If logging of this phase has been
-     * requested, it prepares a logger using the phase name for naming the XML and
-     * XSL files as well as for the topmost XML element within the XML file.
-     */
+public class EndProd {
+
     public EndProd() {
-        super("endproduct");
         functions = new Vector<>();
     }
 
-    Vector<EndFunction> functions;
+    private Vector<EndFunction> functions;
 
     public void finishCode(){
         functions.addAll(EndFunction.getSystemFunctions());
@@ -42,7 +35,7 @@ public class EndProd extends Phase {
         }catch(Exception e){System.out.println(e);}
     }
 
-    public void writeCode(BufferedWriter writer){
+    private void writeCode(BufferedWriter writer){
         writeDataChunks(writer);
         writeCodeChunks(writer);
     }
@@ -60,6 +53,12 @@ public class EndProd extends Phase {
                     writer.write('\t');
                     writer.write("BYTE\t");
                     writer.write(chunk.init);
+                    writer.newLine();
+                } else {
+                    writer.write(chunk.label.name);
+                    writer.write('\t');
+                    writer.write("OCTA\t");
+                    writer.write("0");
                     writer.newLine();
                 }
             }
