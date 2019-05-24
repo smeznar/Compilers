@@ -42,17 +42,21 @@ public class EndProd {
 
     private void writeDataChunks(BufferedWriter writer){
         try {
+            writer.write("sP\tGREG");
+            writer.newLine();
+            writer.write("fP\tGREG");
+            writer.newLine();
             writer.write("\t\tLOC\tData_Segment");
             writer.newLine();
-            writer.write("\t\tGREG\t@");
+            writer.write("\t\tGREG @");
             writer.newLine();
-            //TODO: Maybe fix
             for (DataChunk chunk : Chunks.dataChunks){
                 if (chunk.init != null){
                     writer.write(chunk.label.name);
                     writer.write('\t');
                     writer.write("BYTE\t");
                     writer.write(chunk.init);
+                    writer.write(",10,0");
                     writer.newLine();
                 } else {
                     writer.write(chunk.label.name);
@@ -71,15 +75,15 @@ public class EndProd {
     private void writeCodeChunks(BufferedWriter writer){
         // TODO: Something
         try {
-            writer.write("\t\tLOC\t#100");
+            writer.write("\t\tLOC\t#80000");
             writer.newLine();
             writer.newLine();
-            //TODO: fix
             for (EndFunction fn : functions){
                 for (String str : fn.instructions){
                     writer.write(str);
                     writer.newLine();
                 }
+                writer.newLine();
             }
             writer.newLine();
         } catch (Exception e){
