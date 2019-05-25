@@ -60,7 +60,7 @@ public class EndProd {
                     writer.write('\t');
                     writer.write("BYTE\t");
                     writer.write(chunk.init);
-                    writer.write(",10,0");
+                    writer.write(",0");
                     writer.newLine();
                 } else {
                     writer.write(chunk.label.name);

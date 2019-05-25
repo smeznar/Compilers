@@ -5,6 +5,7 @@ package compiler.phases.asmcode;
 
 import java.util.*;
 
+import compiler.Main;
 import compiler.common.report.Report;
 import compiler.data.layout.*;
 import compiler.data.imcode.*;
@@ -174,7 +175,7 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
             visArg.add(new AsmOPER("STO `s0,$254," + i, uses, null, null));
             i += 8;
         }
-        visArg.add(new AsmOPER("PUSHJ $16,"+call.label.name, null, null, null));
+        visArg.add(new AsmOPER("PUSHJ $"+ Main.numOfRegs +","+call.label.name, null, null, null));
 
         Temp result = new Temp();
         Vector<Temp> defines = new Vector<>();

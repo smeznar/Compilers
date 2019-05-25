@@ -1,5 +1,6 @@
 package compiler.phases.endproduct;
 
+import compiler.Main;
 import compiler.data.asmcode.AsmInstr;
 import compiler.data.asmcode.AsmLABEL;
 import compiler.data.asmcode.Code;
@@ -36,7 +37,10 @@ public class EndFunction {
     }
 
     private void addPrologue(){
-        long offset = code.frame.locsSize;
+        instructions.add(code.frame.label.name + "\tSET $1,$253");
+        instructions.add("\t\tSET $253,$254");
+
+        long offset = code.frame.size + code.tempSize;
         long low = offset & ((1<<16) - 1);
         offset = offset >> 16;
         long medLow = offset & ((1<<16) - 1);
@@ -44,25 +48,19 @@ public class EndFunction {
         long medhigh = offset & ((1<<16) - 1);
         offset = offset >> 16;
         long high = offset & ((1<<16) - 1);
-        instructions.add(code.frame.label.name + "\tSUB $0,$254,$253");
-        instructions.add("\t\tSETL $1," + low);
+        instructions.add("\t\tSETL $0," + low);
         if (medLow > 0) {
-            instructions.add("\t\tINCML $1," + medLow);
+            instructions.add("\t\tINCML $0," + medLow);
         }
         if (medhigh > 0) {
-            instructions.add("\t\tINCMH $1," + medhigh);
+            instructions.add("\t\tINCMH $0," + medhigh);
         }
         if (high > 0) {
-            instructions.add("\t\tINCH $1," + high);
+            instructions.add("\t\tINCH $0," + high);
         }
-        instructions.add("\t\tADD $0,$0,$1");
-        instructions.add("\t\tSUB $0,$253,$0");
-        instructions.add("\t\tSTO $253,$0,0");
-        instructions.add("\t\tSUB $0,$0,8");
-        instructions.add("\t\tGET $1,rJ");
-        instructions.add("\t\tSTO $1,$0,0");
-        instructions.add("\t\tOR $253,$254,0");
-        offset = code.tempSize + code.frame.size;
+        instructions.add("\t\tSUB $254,$254,$0");
+
+        offset = code.frame.locsSize + 8;
         low = offset & ((1<<16) - 1);
         offset = offset >> 16;
         medLow = offset & ((1<<16) - 1);
@@ -80,13 +78,21 @@ public class EndFunction {
         if (high > 0) {
             instructions.add("\t\tINCH $0," + high);
         }
-        instructions.add("\t\tSUB $254,$254,$0");
+        instructions.add("\t\tSUB $0,$253,$0");
+        instructions.add("\t\tSTO $1,$0,0");
+
+        instructions.add("\t\tSUB $0,$0,8");
+        instructions.add("\t\tGET $1,rJ");
+        instructions.add("\t\tSTO $1,$0,0");
         instructions.add("\t\tJMP " + code.entryLabel.name);
     }
 
     private void addEpilogue(){
         //long offset = code.tempSize + code.frame.size;
-        long offset = code.frame.locsSize;
+        instructions.add(code.exitLabel.name + "\tSTO $"+code.regs.get(code.frame.RV)+",$253");
+        instructions.add("\t\tSET $254,$253");
+
+        long offset = code.frame.locsSize+8;
         long low = offset & ((1<<16) - 1);
         offset = offset >> 16;
         long medLow = offset & ((1<<16) - 1);
@@ -94,25 +100,24 @@ public class EndFunction {
         long medhigh = offset & ((1<<16) - 1);
         offset = offset >> 16;
         long high = offset & ((1<<16) - 1);
-        instructions.add(code.exitLabel.name + "\tOR $254,$253,0");
-        instructions.add("\t\tSETL $1," + low);
+        instructions.add("\t\tSETL $0," + low);
         if (medLow > 0) {
-            instructions.add("\t\tINCML $1," + medLow);
+            instructions.add("\t\tINCML $0," + medLow);
         }
         if (medhigh > 0) {
-            instructions.add("\t\tINCMH $1," + medhigh);
+            instructions.add("\t\tINCMH $0," + medhigh);
         }
         if (high > 0) {
-            instructions.add("\t\tINCH $1," + high);
+            instructions.add("\t\tINCH $0," + high);
         }
-        instructions.add("\t\tSUB $0,$254,8");
-        instructions.add("\t\tSUB $0,$0,$1");
-        instructions.add("\t\tLDO $0,$0,0");
+        instructions.add("\t\tSET $1,$253");
+        instructions.add("\t\tSUB $1,$1,$0");
+        instructions.add("\t\tLDO $253,$1,0");
+
+        instructions.add("\t\tSUB $1,$1,8");
+        instructions.add("\t\tLDO $0,$1,0");
         instructions.add("\t\tPUT rJ,$0");
-        instructions.add("\t\tLDO $0,$254,0");
-        instructions.add("\t\tOR $253,$0,0");
-        instructions.add("\t\tSTO $"+code.regs.get(code.frame.RV)+",$254");
-        instructions.add("\t\tPOP 16,0");
+        instructions.add("\t\tPOP "+ Main.numOfRegs +",0");
     }
 
     private void replaceRegisters(){
@@ -140,7 +145,7 @@ public class EndFunction {
         Vector<String> instrs = fn.instructions;
         instrs.add("Main\tSETH fP,1");
         instrs.add("\t\tSETH sP,1");
-        instrs.add("\t\tPUSHJ $16,_main");
+        instrs.add("\t\tPUSHJ $"+ Main.numOfRegs +",_main");
         instrs.add("\t\tTRAP\t0,Halt,0");
         return fn;
     }
@@ -154,7 +159,7 @@ public class EndFunction {
     public static EndFunction addDelFun(){
         EndFunction fn = new EndFunction();
         Vector<String> instrs = fn.instructions;
-        instrs.add("_del\tPOP 16,0");
+        instrs.add("_del\tPOP "+ Main.numOfRegs +",0");
         return fn;
     }
 
@@ -163,7 +168,7 @@ public class EndFunction {
         Vector<String> instrs = fn.instructions;
         instrs.add("_putString\tLDO $255,sP,8");
         instrs.add("\t\tTRAP 0,Fputs,StdOut");
-        instrs.add("\t\tPOP 16,0");
+        instrs.add("\t\tPOP "+ Main.numOfRegs +",0");
         return fn;
     }
 
@@ -180,7 +185,7 @@ public class EndFunction {
         instrs.add("\t\tBNZ $0,putLoop");
         instrs.add("\t\tSET $255,$1");
         instrs.add("\t\tTRAP 0,Fputs,StdOut");
-        instrs.add("\t\tPOP 16,0");
+        instrs.add("\t\tPOP "+ Main.numOfRegs +",0");
         return fn;
     }
 
@@ -193,7 +198,7 @@ public class EndFunction {
         instrs.add("\t\tSTB $0,$1,0");
         instrs.add("\t\tSET $255,$1");
         instrs.add("\t\tTRAP 0,Fputs,StdOut");
-        instrs.add("\t\tPOP 16,0");
+        instrs.add("\t\tPOP "+ Main.numOfRegs +",0");
         return fn;
     }
 }
