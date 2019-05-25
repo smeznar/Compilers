@@ -55,8 +55,10 @@ public class StmtGenerator implements ImcVisitor<Vector<AsmInstr>, Object> {
             uses.add(move.src.accept(getExpressionGenerator(), instructions));
             instructions.add(new AsmMOVE("SET `d0,`s0", uses, defines)); // TODO: check
         } else if (move.dst instanceof ImcMEM){
-            Temp dst = move.dst.accept(getExpressionGenerator(), instructions);
-            Temp src = move.src.accept(getExpressionGenerator(), instructions);
+            ExprGenerator gen = getExpressionGenerator();
+            gen.fromStore = true;
+            Temp dst = move.dst.accept(gen, instructions);
+            Temp src = move.src.accept(gen, instructions);
             //defines.add(dst);
             uses.add(src);
             uses.add(dst);

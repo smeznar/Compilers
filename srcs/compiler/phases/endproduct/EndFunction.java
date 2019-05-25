@@ -36,7 +36,7 @@ public class EndFunction {
     }
 
     private void addPrologue(){
-        long offset = code.tempSize + code.frame.size;
+        long offset = code.frame.locsSize;
         long low = offset & ((1<<16) - 1);
         offset = offset >> 16;
         long medLow = offset & ((1<<16) - 1);
@@ -45,12 +45,31 @@ public class EndFunction {
         offset = offset >> 16;
         long high = offset & ((1<<16) - 1);
         instructions.add(code.frame.label.name + "\tSUB $0,$254,$253");
+        instructions.add("\t\tSETL $1," + low);
+        if (medLow > 0) {
+            instructions.add("\t\tINCML $1," + medLow);
+        }
+        if (medhigh > 0) {
+            instructions.add("\t\tINCMH $1," + medhigh);
+        }
+        if (high > 0) {
+            instructions.add("\t\tINCH $1," + high);
+        }
+        instructions.add("\t\tADD $0,$0,$1");
         instructions.add("\t\tSUB $0,$253,$0");
         instructions.add("\t\tSTO $253,$0,0");
         instructions.add("\t\tSUB $0,$0,8");
         instructions.add("\t\tGET $1,rJ");
         instructions.add("\t\tSTO $1,$0,0");
         instructions.add("\t\tOR $253,$254,0");
+        offset = code.tempSize + code.frame.size;
+        low = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        medLow = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        medhigh = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        high = offset & ((1<<16) - 1);
         instructions.add("\t\tSETL $0," + low);
         if (medLow > 0) {
             instructions.add("\t\tINCML $0," + medLow);
@@ -67,11 +86,33 @@ public class EndFunction {
 
     private void addEpilogue(){
         //long offset = code.tempSize + code.frame.size;
+        long offset = code.frame.locsSize;
+        long low = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        long medLow = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        long medhigh = offset & ((1<<16) - 1);
+        offset = offset >> 16;
+        long high = offset & ((1<<16) - 1);
         instructions.add(code.exitLabel.name + "\tOR $254,$253,0");
-        instructions.add("\t\tSTO $"+code.regs.get(code.frame.RV)+",$254");
+        instructions.add("\t\tSETL $1," + low);
+        if (medLow > 0) {
+            instructions.add("\t\tINCML $1," + medLow);
+        }
+        if (medhigh > 0) {
+            instructions.add("\t\tINCMH $1," + medhigh);
+        }
+        if (high > 0) {
+            instructions.add("\t\tINCH $1," + high);
+        }
+        instructions.add("\t\tSUB $0,$254,8");
+        instructions.add("\t\tSUB $0,$0,$1");
+        instructions.add("\t\tLDO $0,$0,0");
+        instructions.add("\t\tPUT rJ,$0");
         instructions.add("\t\tLDO $0,$254,0");
         instructions.add("\t\tOR $253,$0,0");
-        instructions.add("\t\tPOP 16");
+        instructions.add("\t\tSTO $"+code.regs.get(code.frame.RV)+",$254");
+        instructions.add("\t\tPOP 16,0");
     }
 
     private void replaceRegisters(){
@@ -113,7 +154,7 @@ public class EndFunction {
     public static EndFunction addDelFun(){
         EndFunction fn = new EndFunction();
         Vector<String> instrs = fn.instructions;
-        instrs.add("_del\tPOP 16");
+        instrs.add("_del\tPOP 16,0");
         return fn;
     }
 
@@ -122,23 +163,37 @@ public class EndFunction {
         Vector<String> instrs = fn.instructions;
         instrs.add("_putString\tLDO $255,sP,8");
         instrs.add("\t\tTRAP 0,Fputs,StdOut");
-        instrs.add("\t\tPOP 16");
+        instrs.add("\t\tPOP 16,0");
         return fn;
     }
 
     public static EndFunction putIntFun(){
         EndFunction fn = new EndFunction();
         Vector<String> instrs = fn.instructions;
-        instrs.add("_putInt\tLDO $255,sP,8");
-        instrs.add("\t\tPOP 16");
+        instrs.add("_putInt\tLDO $0,sP,8");
+        instrs.add("\t\tLDA $1,numStr");
+        instrs.add("putLoop\tSUB $1,$1,1");
+        instrs.add("\t\tDIV $0,$0,10");
+        instrs.add("\t\tGET $2,rR");
+        instrs.add("\t\tADD $2,$2,48");
+        instrs.add("\t\tSTB $2,$1,0");
+        instrs.add("\t\tBNZ $0,putLoop");
+        instrs.add("\t\tSET $255,$1");
+        instrs.add("\t\tTRAP 0,Fputs,StdOut");
+        instrs.add("\t\tPOP 16,0");
         return fn;
     }
 
     public static EndFunction putCharFun(){
         EndFunction fn = new EndFunction();
         Vector<String> instrs = fn.instructions;
-        instrs.add("_putChar\tLDO $255,sP,8");
-        instrs.add("\t\tPOP 16");
+        instrs.add("_putChar\tLDO $0,sP,8");
+        instrs.add("\t\tLDA $1,numStr");
+        instrs.add("\t\tSUB $1,$1,1");
+        instrs.add("\t\tSTB $0,$1,0");
+        instrs.add("\t\tSET $255,$1");
+        instrs.add("\t\tTRAP 0,Fputs,StdOut");
+        instrs.add("\t\tPOP 16,0");
         return fn;
     }
 }

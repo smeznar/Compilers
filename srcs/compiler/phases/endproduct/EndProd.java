@@ -50,6 +50,10 @@ public class EndProd {
             writer.newLine();
             writer.write("\t\tGREG @");
             writer.newLine();
+            writer.write("\t\tBYTE 0,0,0,0,0,0,0,0");
+            writer.newLine();
+            writer.write("numStr\tBYTE 0");
+            writer.newLine();
             for (DataChunk chunk : Chunks.dataChunks){
                 if (chunk.init != null){
                     writer.write(chunk.label.name);

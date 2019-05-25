@@ -16,6 +16,8 @@ import compiler.data.asmcode.*;
  */
 public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
 
+    boolean fromStore = false;
+
     @Override
     public Temp visit(ImcUNOP expr, Vector<AsmInstr> visArg){
         Temp subResult = expr.subExpr.accept(this, visArg);
@@ -183,7 +185,12 @@ public class ExprGenerator implements ImcVisitor<Temp, Vector<AsmInstr>> {
 
     @Override
     public Temp visit(ImcMEM mem, Vector<AsmInstr> visArg){
+        boolean store = fromStore;
+        fromStore = false;
         Temp addr = mem.addr.accept(this, visArg);
+        if (store){
+            return addr;
+        }
         Temp result = new Temp();
         Vector<Temp> uses = new Vector<>();
         uses.add(addr);
