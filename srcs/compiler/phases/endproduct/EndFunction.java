@@ -176,14 +176,25 @@ public class EndFunction {
         EndFunction fn = new EndFunction();
         Vector<String> instrs = fn.instructions;
         instrs.add("_putInt\tLDO $0,sP,8");
-        instrs.add("\t\tLDA $1,numStr");
+        // IS LESS THAN ZERO?
+        instrs.add("\t\tCMP $3,$0,0");
+        instrs.add("\t\tNEG $2,0,1");
+        instrs.add("\t\tCMP $3,$3,$2");
+        instrs.add("\t\tBNZ $3,posNum");
+        instrs.add("\t\tNEG $0,0,$0");
+        //
+        instrs.add("posNum\tLDA $1,numStr");
         instrs.add("putLoop\tSUB $1,$1,1");
         instrs.add("\t\tDIV $0,$0,10");
         instrs.add("\t\tGET $2,rR");
         instrs.add("\t\tADD $2,$2,48");
         instrs.add("\t\tSTB $2,$1,0");
         instrs.add("\t\tBNZ $0,putLoop");
-        instrs.add("\t\tSET $255,$1");
+        instrs.add("\t\tBNZ $3,printNum");
+        instrs.add("\t\tSUB $1,$1,1");
+        instrs.add("\t\tSETL $2,45");
+        instrs.add("\t\tSTB $2,$1,0");
+        instrs.add("printNum\tSET $255,$1");
         instrs.add("\t\tTRAP 0,Fputs,StdOut");
         instrs.add("\t\tPOP "+ Main.numOfRegs +",0");
         return fn;

@@ -161,7 +161,7 @@ public class Graph {
             HashSet<Integer> neighboursColors = node.getNeighbourColors();
             colorsLeft.removeAll(neighboursColors);
             if (colorsLeft.size() > 0){
-                int min = 9;
+                int min = Main.numOfRegs;
                 for (Integer i: colorsLeft){
                     if (i < min){
                         min = i;

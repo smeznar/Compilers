@@ -1,3 +1,23 @@
-fun putString(s:ptr char):void;
+var i : int;
+var j : int;
+var k : int;
+var l : int;
+var m : int;
+var n : int;
+var o : int;
+var p : int;
+var q : int;
+var z : int;
+var x : int;
+fun putString(a : ptr char):void;
+fun putChar(c:char):void;
+fun putInt(a:int):void;
 
-fun main():void=putString("HELLO");
+fun main():int = {
+	test(i, j, k, l, m, n, o, p, q, z);
+	putString("nekej"); putChar((10 : char));
+	x = 1+2+3+4+5+6+7+8+9;
+	putInt(x); putChar((10 : char));
+	:0
+	where fun test(a:int, b:int, c:int, d:int, e:int, f:int, g:int, h:int, i:int, z:int):int=1;
+};
