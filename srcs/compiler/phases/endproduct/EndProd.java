@@ -42,9 +42,11 @@ public class EndProd {
 
     private void writeDataChunks(BufferedWriter writer){
         try {
-            writer.write("sP\tGREG");
+            writer.write("sP\tGREG"); //#2000000000000000
             writer.newLine();
             writer.write("fP\tGREG");
+            writer.newLine();
+            writer.write("hP\tGREG");
             writer.newLine();
             writer.write("\t\tLOC\tData_Segment");
             writer.newLine();
@@ -77,9 +79,8 @@ public class EndProd {
     }
 
     private void writeCodeChunks(BufferedWriter writer){
-        // TODO: Something
         try {
-            writer.write("\t\tLOC\t#80000");
+            writer.write("\t\tLOC\t#8000");
             writer.newLine();
             writer.newLine();
             for (EndFunction fn : functions){

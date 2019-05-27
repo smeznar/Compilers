@@ -145,6 +145,7 @@ public class EndFunction {
         Vector<String> instrs = fn.instructions;
         instrs.add("Main\tSETH fP,1");
         instrs.add("\t\tSETH sP,1");
+        instrs.add("\t\tSETH hP,2");
         instrs.add("\t\tPUSHJ $"+ Main.numOfRegs +",_main");
         instrs.add("\t\tTRAP\t0,Halt,0");
         return fn;
@@ -153,6 +154,11 @@ public class EndFunction {
     public static EndFunction addNewFun(){
         EndFunction fn = new EndFunction();
         Vector<String> instrs = fn.instructions;
+        instrs.add("_new\tLDO $0,sP,8");
+        instrs.add("\t\tSET $1,hP");
+        instrs.add("\t\tSUB hP,hP,$0");
+        instrs.add("\t\tSTO $1,sP,0");
+        instrs.add("\t\tPOP "+ Main.numOfRegs +",0");
         return fn;
     }
 
