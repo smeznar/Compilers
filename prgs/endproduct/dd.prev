@@ -23,7 +23,7 @@ fun main():bool={
 
 fun addComplex(a1:ptr Complex,a2:ptr Complex):ptr Complex={
    res.re = (@a1).re + (@a2).re;
-   res.im = (@a1).im + (@a2).im;
+   res.im = (@a1).im - (@a2).im;
 :$res where
      var res:Complex;};
 

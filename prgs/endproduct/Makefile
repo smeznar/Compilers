@@ -39,7 +39,7 @@ run_mmix:
 	done;
 	@for SRC in `'ls' -1 *.mmo` ; do \
 		echo "Testing $$SRC:" ; \
-		echo `./mmix $$SRC` \ > output/`basename $$SRC .mmo`.txt; \
+		./mmix $$SRC > output/`basename $$SRC .mmo`.txt; \
 		echo "Done testing $$SRC, output is stored in `basename $$SRC .mmo`.txt"; \
 		echo ; \
 	done;
